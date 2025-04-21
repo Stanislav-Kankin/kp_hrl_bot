@@ -57,23 +57,23 @@ def fill_complex_template(doc, data):
     if len(doc.tables) > 0:
         table = doc.tables[0]
 
-        table.cell(0, 2).text = format_cost(data["base_license_cost"])
-        table.cell(0, 3).text = format_count(data["base_license_count"])
-        table.cell(0, 5).text = format_cost(data["base_license_cost"] * data["base_license_count"])
+        table.cell(1, 2).text = format_cost(data["base_license_cost"])
+        table.cell(1, 3).text = format_count(data["base_license_count"])
+        table.cell(1, 5).text = format_cost(data["base_license_cost"] * data["base_license_count"])
 
-        table.cell(1, 2).text = format_cost(data["hr_license_cost"])
-        table.cell(1, 3).text = format_count(data["hr_license_count"])
-        table.cell(1, 5).text = format_cost(data["hr_license_cost"] * data["hr_license_count"])
+        table.cell(2, 2).text = format_cost(data["hr_license_cost"])
+        table.cell(2, 3).text = format_count(data["hr_license_count"])
+        table.cell(2, 5).text = format_cost(data["hr_license_cost"] * data["hr_license_count"])
 
-        table.cell(2, 2).text = format_cost(data["employee_license_cost"])
-        table.cell(2, 3).text = format_count(data["employee_license_count"])
-        table.cell(2, 5).text = format_cost(data["employee_license_cost"] * data["employee_license_count"])
+        table.cell(3, 2).text = format_cost(data["employee_license_cost"])
+        table.cell(3, 3).text = format_count(data["employee_license_count"])
+        table.cell(3, 5).text = format_cost(data["employee_license_cost"] * data["employee_license_count"])
 
         total = (data["base_license_cost"] * data["base_license_count"] +
                  data["hr_license_cost"] * data["hr_license_count"] +
                  data["employee_license_cost"] * data["employee_license_count"])
 
-        table.cell(3, 5).text = format_cost(total)
+        table.cell(4, 5).text = format_cost(total)
 
         for row in table.rows:
             for cell in row.cells:
