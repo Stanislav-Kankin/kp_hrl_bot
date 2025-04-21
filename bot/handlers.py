@@ -51,7 +51,7 @@ async def process_base_license_cost_standard(message: types.Message, state: FSMC
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
         await state.set_state(FormStandard.base_license_count)
-        await message.answer(f"Стоимость Базовой лицензии: {value} руб/год. Введите <b>количество Базовых лицензий</b>:")
+        await message.answer(f"Введите <b>количество Базовых лицензий</b>:")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -61,7 +61,7 @@ async def process_base_license_cost_complex(message: types.Message, state: FSMCo
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
         await state.set_state(FormComplex.base_license_count)
-        await message.answer(f"Стоимость Базовой лицензии: {value} руб/год. Введите <b>количество Базовых лицензий</b>:")
+        await message.answer(f"Введите <b>количество Базовых лицензий</b>:")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -71,7 +71,7 @@ async def process_base_license_count_standard(message: types.Message, state: FSM
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
         await state.set_state(FormStandard.hr_license_cost)
-        await message.answer(f"Количество Базовых лицензий: {int(value)}. Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
+        await message.answer(f"Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -81,7 +81,7 @@ async def process_base_license_count_complex(message: types.Message, state: FSMC
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
         await state.set_state(FormComplex.hr_license_cost)
-        await message.answer(f"Количество Базовых лицензий: {int(value)}. Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
+        await message.answer(f"Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -91,7 +91,7 @@ async def process_hr_license_cost_standard(message: types.Message, state: FSMCon
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
         await state.set_state(FormStandard.hr_license_count)
-        await message.answer(f"Стоимость лицензий кадровиков: {value} руб/год. Введите <b>количество лицензий кадровиков</b>:")
+        await message.answer(f"Введите <b>количество лицензий кадровиков</b>:")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -101,7 +101,7 @@ async def process_hr_license_cost_complex(message: types.Message, state: FSMCont
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
         await state.set_state(FormComplex.hr_license_count)
-        await message.answer(f"Стоимость лицензий кадровиков: {value} руб/год. Введите <b>количество лицензий кадровиков</b>:")
+        await message.answer(f"Введите <b>количество лицензий кадровиков</b>:")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -111,7 +111,7 @@ async def process_hr_license_count_standard(message: types.Message, state: FSMCo
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
         await state.set_state(FormStandard.employee_license_cost)
-        await message.answer(f"Количество лицензий кадровиков: {int(value)}. Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+        await message.answer(f"Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -121,7 +121,7 @@ async def process_hr_license_count_complex(message: types.Message, state: FSMCon
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
         await state.set_state(FormComplex.employee_license_cost)
-        await message.answer(f"Количество лицензий кадровиков: {int(value)}. Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+        await message.answer(f"Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -131,7 +131,7 @@ async def process_employee_license_cost_standard(message: types.Message, state: 
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
         await state.set_state(FormStandard.employee_license_count)
-        await message.answer(f"Стоимость лицензии сотрудника: {value} руб/год. Введите <b>количество лицензий сотрудника</b>:")
+        await message.answer(f"Введите <b>количество лицензий сотрудника</b>:")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -141,7 +141,7 @@ async def process_employee_license_cost_complex(message: types.Message, state: F
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
         await state.set_state(FormComplex.employee_license_count)
-        await message.answer(f"Стоимость лицензии сотрудника: {value} руб/год. Введите <b>количество лицензий сотрудника</b>:")
+        await message.answer(f"Введите <b>количество лицензий сотрудника</b>:")
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
@@ -155,7 +155,7 @@ async def process_employee_license_count_standard(message: types.Message, state:
             [InlineKeyboardButton(text="Да", callback_data="onprem_yes")],
             [InlineKeyboardButton(text="Нет", callback_data="onprem_no")]
         ])
-        await message.answer(f"Количество лицензий сотрудника: {int(value)}. Нужен ли on-prem?", reply_markup=keyboard)
+        await message.answer(f"Нужен ли on-prem?", reply_markup=keyboard)
         await state.set_state(FormStandard.need_onprem)
     except ValueError as e:
         await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")

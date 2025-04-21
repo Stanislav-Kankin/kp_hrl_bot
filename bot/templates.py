@@ -1,5 +1,5 @@
 from docx import Document
-from docx.shared import Pt  # Добавляем импорт Pt
+from docx.shared import Pt, RGBColor  # Добавляем импорт Pt
 from .utils import set_montserrat_font, format_cost, format_count
 
 def load_template(template_name):
@@ -49,9 +49,29 @@ def fill_standard_template(doc, data):
 
 def fill_complex_template(doc, data):
     set_montserrat_font(doc)
+    company_name = data.get('company_name', '')
+    
+    for paragraph in doc.paragraphs:
+        if "Коммерческое предложение HRlink для компании" in paragraph.text:
+            # Очищаем параграф
+            paragraph.clear()
+            
+            # Добавляем первую часть текста (жирный)
+            run1 = paragraph.add_run("Коммерческое предложение HRlink для компании ")
+            run1.bold = True
+            run1.font.size = Pt(18)
+            
+            # Добавляем название компании (голубой)
+            run2 = paragraph.add_run(f'"{company_name}"')
+            run2.bold = True
+            run2.font.color.rgb = RGBColor(0x44, 0x9D, 0xE6)  # Голубой цвет
+            run2.font.size = Pt(18)
+            run2.font.color.rgb = RGBColor(0x44, 0x9D, 0xE6)  # Голубой цвет
+            run2.font.size = Pt(18)
+            break
 
     # Заполняем название компании
-    doc.paragraphs[0].text = f"Коммерческое предложение HRlink для компании “{data['company_name']}”."
+    # doc.paragraphs[0].text = f"Коммерческое предложение HRlink для компании “{data['company_name']}”."
 
     # Если в шаблоне есть таблица, заполняем её
     if len(doc.tables) > 0:
