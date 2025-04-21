@@ -9,20 +9,18 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dotenv import load_dotenv
 from docx import Document
+from docx.shared import Pt
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 from io import BytesIO
 from PyPDF2 import PdfReader, PdfWriter
-from aiogram.enums.parse_mode import ParseMode
-from aiogram.client.default import DefaultBotProperties
 
 # Загрузка токена из .env
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
-bot = Bot(
-    token=TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token=TOKEN)
 dp = Dispatcher()
-
 
 # Состояния для FSM
 class Form(StatesGroup):
@@ -36,10 +34,8 @@ class Form(StatesGroup):
     onprem_cost = State()
     onprem_count = State()
 
-
 # Словарь для хранения соответствия между уникальным идентификатором и file_id
 file_id_mapping = OrderedDict()
-
 
 # Функция для проверки и очистки данных
 def clean_input(value):
@@ -48,16 +44,13 @@ def clean_input(value):
     except ValueError:
         raise ValueError(f"Некорректное значение: {value}")
 
-
 # Функция для форматирования стоимости
 def format_cost(value):
     return f"{value:,.2f}".replace(',', ' ').replace('.', ',')
 
-
 # Функция для форматирования количества
 def format_count(value):
     return f"{int(value)}"
-
 
 # Функция для удаления всех файлов, начинающихся на "КП_"
 def cleanup_kp_files():
@@ -66,14 +59,17 @@ def cleanup_kp_files():
         if filename.startswith("КП_") and filename.endswith(".docx"):
             os.remove(os.path.join(current_dir, filename))
 
+# Функция для установки шрифта Montserrat
+def set_montserrat_font(run):
+    run.font.name = 'Montserrat'
+    run._element.rPr.rFonts.set(qn('w:eastAsia'), 'Montserrat')
 
 # Обработчик команды /start
 @dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer(
-        "Это бот для создания <b>КП</b>. Нажмите /kp для начала."
+        "Это бот для создания КП. Нажмите /kp для начала."
     )
-
 
 # Обработчик команды /kp
 @dp.message(Command("kp"))
@@ -82,8 +78,7 @@ async def start_kp(message: types.Message, state: FSMContext):
     cleanup_kp_files()
 
     await state.set_state(Form.base_license_cost)
-    await message.answer("Введите <b>стоимость Базовой лицензии</b> (руб/год):")
-
+    await message.answer("Введите стоимость Базовой лицензии (руб/год):")
 
 # Обработчик стоимости Базовой лицензии
 @dp.message(Form.base_license_cost)
@@ -92,10 +87,9 @@ async def process_base_license_cost(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
         await state.set_state(Form.base_license_count)
-        await message.answer("Введите <b>количество Базовых лицензий</b>:")
+        await message.answer("Введите количество Базовых лицензий:")
     except ValueError as e:
         await message.answer(str(e))
-
 
 # Обработчик количества Базовых лицензий
 @dp.message(Form.base_license_count)
@@ -104,10 +98,9 @@ async def process_base_license_count(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
         await state.set_state(Form.hr_license_cost)
-        await message.answer("Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
+        await message.answer("Введите стоимость лицензий кадровиков (руб/год):")
     except ValueError as e:
         await message.answer(str(e))
-
 
 # Обработчик стоимости лицензий кадровиков
 @dp.message(Form.hr_license_cost)
@@ -116,10 +109,9 @@ async def process_hr_license_cost(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
         await state.set_state(Form.hr_license_count)
-        await message.answer("Введите <b>количество лицензий кадровиков</b>:")
+        await message.answer("Введите количество лицензий кадровиков:")
     except ValueError as e:
         await message.answer(str(e))
-
 
 # Обработчик количества лицензий кадровиков
 @dp.message(Form.hr_license_count)
@@ -128,10 +120,9 @@ async def process_hr_license_count(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
         await state.set_state(Form.employee_license_cost)
-        await message.answer("Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+        await message.answer("Введите стоимость лицензии сотрудника (руб/год):")
     except ValueError as e:
         await message.answer(str(e))
-
 
 # Обработчик стоимости лицензии сотрудника
 @dp.message(Form.employee_license_cost)
@@ -140,10 +131,9 @@ async def process_employee_license_cost(message: types.Message, state: FSMContex
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
         await state.set_state(Form.employee_license_count)
-        await message.answer("Введите <b>количество лицензий сотрудника</b>:")
+        await message.answer("Введите количество лицензий сотрудника:")
     except ValueError as e:
         await message.answer(str(e))
-
 
 # Обработчик количества лицензий сотрудника
 @dp.message(Form.employee_license_count)
@@ -162,7 +152,6 @@ async def process_employee_license_count(message: types.Message, state: FSMConte
     except ValueError as e:
         await message.answer(str(e))
 
-
 # Обработчик ответа на вопрос про on-prem
 @dp.callback_query(F.data.startswith("onprem_"))
 async def process_onprem_choice(callback: types.CallbackQuery, state: FSMContext):
@@ -171,13 +160,12 @@ async def process_onprem_choice(callback: types.CallbackQuery, state: FSMContext
     if choice == "yes":
         await state.update_data(need_onprem=True)
         await state.set_state(Form.onprem_cost)
-        await callback.message.answer("Введите <b>сумму on-prem</b> (руб/год):")
+        await callback.message.answer("Введите сумму on-prem (руб/год):")
     else:
         await state.update_data(need_onprem=False, onprem_cost=0, onprem_count=0)
         await generate_kp(callback.message, state)
 
     await callback.answer()
-
 
 # Обработчик суммы on-prem
 @dp.message(Form.onprem_cost)
@@ -186,10 +174,9 @@ async def process_onprem_cost(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(onprem_cost=value)
         await state.set_state(Form.onprem_count)
-        await message.answer("Введите <b>количество лицензий on-prem</b>:")
+        await message.answer("Введите количество лицензий on-prem:")
     except ValueError as e:
         await message.answer(str(e))
-
 
 # Обработчик количества лицензий on-prem
 @dp.message(Form.onprem_count)
@@ -201,7 +188,6 @@ async def process_onprem_count(message: types.Message, state: FSMContext):
     except ValueError as e:
         await message.answer(str(e))
 
-
 # Генерация КП и отправка пользователю
 async def generate_kp(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -209,32 +195,55 @@ async def generate_kp(message: types.Message, state: FSMContext):
     # Загружаем шаблон
     doc = Document("template.docx")
 
+    # Устанавливаем шрифт Montserrat для всего документа
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            set_montserrat_font(run)
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        set_montserrat_font(run)
+
     # Обновляем таблицу (пример для всех строк)
     table = doc.tables[0]  # Предполагаем, что таблица первая в документе
 
     # Заполняем данные (адаптируйте под структуру вашего шаблона)
     table.cell(1, 2).text = format_cost(data["base_license_cost"])  # Стоимость Базовой лицензии
+    set_montserrat_font(table.cell(1, 2).paragraphs[0].runs[0])
     table.cell(1, 3).text = format_count(data["base_license_count"])  # Количество
+    set_montserrat_font(table.cell(1, 3).paragraphs[0].runs[0])
     table.cell(1, 5).text = format_cost(data["base_license_cost"] * data["base_license_count"])  # Итого
+    set_montserrat_font(table.cell(1, 5).paragraphs[0].runs[0])
 
     table.cell(2, 2).text = format_cost(data["hr_license_cost"])  # Стоимость лицензий кадровиков
+    set_montserrat_font(table.cell(2, 2).paragraphs[0].runs[0])
     table.cell(2, 3).text = format_count(data["hr_license_count"])  # Количество
+    set_montserrat_font(table.cell(2, 3).paragraphs[0].runs[0])
     table.cell(2, 5).text = format_cost(data["hr_license_cost"] * data["hr_license_count"])  # Итого
+    set_montserrat_font(table.cell(2, 5).paragraphs[0].runs[0])
 
     table.cell(3, 2).text = format_cost(data["employee_license_cost"])  # Стоимость лицензии сотрудника
+    set_montserrat_font(table.cell(3, 2).paragraphs[0].runs[0])
     table.cell(3, 3).text = format_count(data["employee_license_count"])  # Количество
+    set_montserrat_font(table.cell(3, 3).paragraphs[0].runs[0])
     table.cell(3, 5).text = format_cost(data["employee_license_cost"] * data["employee_license_count"])  # Итого
+    set_montserrat_font(table.cell(3, 5).paragraphs[0].runs[0])
 
-    if data["need_onprem"]:
-        table.cell(4, 2).text = format_cost(data["onprem_cost"])  # Стоимость on-prem
-        table.cell(4, 3).text = format_count(data["onprem_count"])  # Количество
-        table.cell(4, 4).text = "12"  # Срок, мес
-        table.cell(4, 5).text = format_cost(data["onprem_cost"] * data["onprem_count"])  # Итого
+    if not data["need_onprem"]:
+        # Удаляем строку on-prem размещение
+        table.rows[4].clear()
     else:
-        table.cell(4, 2).text = "-"  # Прочерк для стоимости on-prem
-        table.cell(4, 3).text = "-"  # Прочерк для количества on-prem
-        table.cell(4, 4).text = "-"  # Прочерк для срока, мес
-        table.cell(4, 5).text = "-"  # Прочерк для итого on-prem
+        table.cell(4, 2).text = format_cost(data["onprem_cost"])  # Стоимость on-prem
+        set_montserrat_font(table.cell(4, 2).paragraphs[0].runs[0])
+        table.cell(4, 3).text = format_count(data["onprem_count"])  # Количество
+        set_montserrat_font(table.cell(4, 3).paragraphs[0].runs[0])
+        table.cell(4, 4).text = "12"  # Срок, мес
+        set_montserrat_font(table.cell(4, 4).paragraphs[0].runs[0])
+        table.cell(4, 5).text = format_cost(data["onprem_cost"] * data["onprem_count"])  # Итого
+        set_montserrat_font(table.cell(4, 5).paragraphs[0].runs[0])
 
     # Вычисляем итоговую сумму
     total = (data["base_license_cost"] * data["base_license_count"] +
@@ -245,6 +254,7 @@ async def generate_kp(message: types.Message, state: FSMContext):
 
     # Заполняем строку "ИТОГО"
     table.cell(5, 5).text = format_cost(total)  # Итого
+    set_montserrat_font(table.cell(5, 5).paragraphs[0].runs[0])
 
     # Сохраняем измененный документ
     kp_filename = f"КП_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
@@ -275,7 +285,6 @@ async def generate_kp(message: types.Message, state: FSMContext):
 
     # Очищаем состояние
     await state.clear()
-
 
 # Обработчик конвертации в PDF
 @dp.callback_query(F.data.startswith("convert_to_pdf_"))
@@ -309,7 +318,6 @@ async def convert_to_pdf(callback: types.CallbackQuery):
     )
 
     await callback.answer()
-
 
 # Запуск бота
 if __name__ == "__main__":
