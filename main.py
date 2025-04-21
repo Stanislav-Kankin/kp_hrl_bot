@@ -9,6 +9,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dotenv import load_dotenv
 from docx import Document
+from docx.shared import Pt
+from docx.oxml.shared import OxmlElement, qn
 from io import BytesIO
 from PyPDF2 import PdfReader, PdfWriter
 from aiogram.enums.parse_mode import ParseMode
@@ -63,8 +65,31 @@ def format_count(value):
 def cleanup_kp_files():
     current_dir = os.getcwd()
     for filename in os.listdir(current_dir):
-        if filename.startswith("КП_") and filename.endswith(".docx"):
-            os.remove(os.path.join(current_dir, filename))
+        if filename.startswith("КП_") and (filename.endswith(".docx") or filename.endswith(".pdf")):
+            try:
+                os.remove(os.path.join(current_dir, filename))
+            except:
+                pass
+
+
+# Функция для установки шрифта Montserrat в документе
+def set_montserrat_font(doc):
+    # Устанавливаем шрифт для всего документа
+    styles = doc.styles
+    for style in styles:
+        if style.type == 1:  # 1 = PARAGRAPH
+            font = style.font
+            font.name = 'Montserrat'
+            font.size = Pt(10)
+
+    # Также устанавливаем шрифт для таблиц
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+                    run.font.name = 'Montserrat'
+                    run.font.size = Pt(10)
 
 
 # Обработчик команды /start
@@ -209,6 +234,9 @@ async def generate_kp(message: types.Message, state: FSMContext):
     # Загружаем шаблон
     doc = Document("template.docx")
 
+    # Устанавливаем шрифт Montserrat для всего документа
+    set_montserrat_font(doc)
+
     # Обновляем таблицу (пример для всех строк)
     table = doc.tables[0]  # Предполагаем, что таблица первая в документе
 
@@ -245,6 +273,14 @@ async def generate_kp(message: types.Message, state: FSMContext):
 
     # Заполняем строку "ИТОГО"
     table.cell(5, 5).text = format_cost(total)  # Итого
+
+    # Устанавливаем шрифт Montserrat для всех ячеек таблицы
+    for row in table.rows:
+        for cell in row.cells:
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.font.name = 'Montserrat'
+                    run.font.size = Pt(10)
 
     # Сохраняем измененный документ
     kp_filename = f"КП_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
