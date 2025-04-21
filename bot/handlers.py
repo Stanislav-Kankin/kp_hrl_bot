@@ -4,29 +4,44 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from bot.states import FormStandard, FormComplex
 from .utils import clean_input, cleanup_kp_files, file_id_mapping
-from .templates import load_template, fill_standard_template, fill_complex_template
+from .templates import (
+    load_template, fill_standard_template, fill_complex_template
+    )
 import uuid
 from datetime import datetime
 from io import BytesIO
+from docx import Document
 
 router = Router()
 
+
 @router.message(Command("start"))
 async def start(message: types.Message):
-    await message.answer("Это бот для создания <b>КП</b>. Нажмите /kp для начала.")
+    await message.answer(
+        "Это бот для создания <b>КП</b>. Нажмите /kp для начала."
+        )
+
 
 @router.message(Command("kp"))
 async def start_kp(message: types.Message, state: FSMContext):
     cleanup_kp_files()
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Стандартный шаблон HRL", callback_data="template_standard")],
-        [InlineKeyboardButton(text="HRL комплекс", callback_data="template_complex")]
+        [InlineKeyboardButton(
+            text="Стандартный шаблон HRL",
+            callback_data="template_standard"
+            )],
+        [InlineKeyboardButton(
+            text="HRL комплекс",
+            callback_data="template_complex"
+            )]
     ])
     await message.answer("Какой шаблон КП интересует?", reply_markup=keyboard)
 
+
 @router.callback_query(lambda c: c.data.startswith("template_"))
-async def process_template_choice(callback: types.CallbackQuery, state: FSMContext):
+async def process_template_choice(callback: types.CallbackQuery,
+                                  state: FSMContext):
     template_choice = callback.data.split("_")[1]
     await state.update_data(template_choice=template_choice)
 
@@ -35,153 +50,228 @@ async def process_template_choice(callback: types.CallbackQuery, state: FSMConte
         await callback.message.answer("Введите <b>название компании</b>:")
     else:
         await state.set_state(FormStandard.base_license_cost)
-        await callback.message.answer("Введите <b>стоимость Базовой лицензии</b> (руб/год):")
+        await callback.message.answer(
+            "Введите <b>стоимость Базовой лицензии</b> (руб/год):"
+            )
 
     await callback.answer()
+
 
 @router.message(FormComplex.company_name)
 async def process_company_name(message: types.Message, state: FSMContext):
     await state.update_data(company_name=message.text)
     await state.set_state(FormComplex.base_license_cost)
-    await message.answer("Введите <b>стоимость Базовой лицензии</b> (руб/год):")
+    await message.answer(
+        "Введите <b>стоимость Базовой лицензии</b> (руб/год):"
+        )
+
 
 @router.message(FormStandard.base_license_cost)
-async def process_base_license_cost_standard(message: types.Message, state: FSMContext):
+async def process_base_license_cost_standard(message: types.Message,
+                                             state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
         await state.set_state(FormStandard.base_license_count)
-        await message.answer(f"Введите <b>количество Базовых лицензий</b>:")
+        await message.answer("Введите <b>количество Базовых лицензий</b>:")
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormComplex.base_license_cost)
-async def process_base_license_cost_complex(message: types.Message, state: FSMContext):
+async def process_base_license_cost_complex(message: types.Message,
+                                            state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
         await state.set_state(FormComplex.base_license_count)
-        await message.answer(f"Введите <b>количество Базовых лицензий</b>:")
+        await message.answer(
+            "Введите <b>количество Базовых лицензий</b>:"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormStandard.base_license_count)
-async def process_base_license_count_standard(message: types.Message, state: FSMContext):
+async def process_base_license_count_standard(message: types.Message,
+                                              state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
         await state.set_state(FormStandard.hr_license_cost)
-        await message.answer(f"Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
+        await message.answer(
+            "Введите <b>стоимость лицензий кадровиков</b> (руб/год):"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormComplex.base_license_count)
-async def process_base_license_count_complex(message: types.Message, state: FSMContext):
+async def process_base_license_count_complex(message: types.Message,
+                                             state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
         await state.set_state(FormComplex.hr_license_cost)
-        await message.answer(f"Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
+        await message.answer(
+            "Введите <b>стоимость лицензий кадровиков</b> (руб/год):"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormStandard.hr_license_cost)
-async def process_hr_license_cost_standard(message: types.Message, state: FSMContext):
+async def process_hr_license_cost_standard(message: types.Message,
+                                           state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
         await state.set_state(FormStandard.hr_license_count)
-        await message.answer(f"Введите <b>количество лицензий кадровиков</b>:")
+        await message.answer(
+            "Введите <b>количество лицензий кадровиков</b>:"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormComplex.hr_license_cost)
-async def process_hr_license_cost_complex(message: types.Message, state: FSMContext):
+async def process_hr_license_cost_complex(message: types.Message,
+                                          state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
         await state.set_state(FormComplex.hr_license_count)
-        await message.answer(f"Введите <b>количество лицензий кадровиков</b>:")
+        await message.answer(
+            "Введите <b>количество лицензий кадровиков</b>:")
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormStandard.hr_license_count)
-async def process_hr_license_count_standard(message: types.Message, state: FSMContext):
+async def process_hr_license_count_standard(message: types.Message,
+                                            state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
         await state.set_state(FormStandard.employee_license_cost)
-        await message.answer(f"Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+        await message.answer(
+            "Введите <b>стоимость лицензии сотрудника</b> (руб/год):"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormComplex.hr_license_count)
-async def process_hr_license_count_complex(message: types.Message, state: FSMContext):
+async def process_hr_license_count_complex(message: types.Message,
+                                           state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
         await state.set_state(FormComplex.employee_license_cost)
-        await message.answer(f"Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+        await message.answer(
+            "Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormStandard.employee_license_cost)
-async def process_employee_license_cost_standard(message: types.Message, state: FSMContext):
+async def process_employee_license_cost_standard(message: types.Message,
+                                                 state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
         await state.set_state(FormStandard.employee_license_count)
-        await message.answer(f"Введите <b>количество лицензий сотрудника</b>:")
+        await message.answer(
+            "Введите <b>количество лицензий сотрудника</b>:"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormComplex.employee_license_cost)
-async def process_employee_license_cost_complex(message: types.Message, state: FSMContext):
+async def process_employee_license_cost_complex(message: types.Message,
+                                                state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
         await state.set_state(FormComplex.employee_license_count)
-        await message.answer(f"Введите <b>количество лицензий сотрудника</b>:")
+        await message.answer(
+            "Введите <b>количество лицензий сотрудника</b>:"
+            )
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormStandard.employee_license_count)
-async def process_employee_license_count_standard(message: types.Message, state: FSMContext):
+async def process_employee_license_count_standard(message: types.Message,
+                                                  state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
-        
+
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Да", callback_data="onprem_yes")],
             [InlineKeyboardButton(text="Нет", callback_data="onprem_no")]
         ])
-        await message.answer(f"Нужен ли on-prem?", reply_markup=keyboard)
+        await message.answer(
+            "Нужен ли on-prem?", reply_markup=keyboard)
         await state.set_state(FormStandard.need_onprem)
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+            )
+
 
 @router.message(FormComplex.employee_license_count)
-async def process_employee_license_count_complex(message: types.Message, state: FSMContext):
+async def process_employee_license_count_complex(message: types.Message,
+                                                 state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
         await generate_kp(message.bot, message, state)
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+
 
 @router.callback_query(lambda c: c.data.startswith("onprem_"))
-async def process_onprem_choice(callback: types.CallbackQuery, state: FSMContext):
+async def process_onprem_choice(callback: types.CallbackQuery,
+                                state: FSMContext):
     choice = callback.data.split("_")[1]
 
     if choice == "yes":
         await state.update_data(need_onprem=True)
         await state.set_state(FormStandard.onprem_cost)
-        await callback.message.answer("Введите <b>сумму on-prem</b> (руб/год):")
+        await callback.message.answer(
+            "Введите <b>сумму on-prem</b> (руб/год):")
     else:
-        await state.update_data(need_onprem=False, onprem_cost=0, onprem_count=0)
+        await state.update_data(
+            need_onprem=False, onprem_cost=0, onprem_count=0)
         await generate_kp(callback.bot, callback.message, state)
 
     await callback.answer()
+
 
 @router.message(FormStandard.onprem_cost)
 async def process_onprem_cost(message: types.Message, state: FSMContext):
@@ -191,7 +281,9 @@ async def process_onprem_cost(message: types.Message, state: FSMContext):
         await state.set_state(FormStandard.onprem_count)
         await message.answer("Введите <b>количество лицензий on-prem</b>:")
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+
 
 @router.message(FormStandard.onprem_count)
 async def process_onprem_count(message: types.Message, state: FSMContext):
@@ -200,7 +292,9 @@ async def process_onprem_count(message: types.Message, state: FSMContext):
         await state.update_data(onprem_count=value)
         await generate_kp(message.bot, message, state)
     except ValueError as e:
-        await message.answer(f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+
 
 async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -231,11 +325,14 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     file_id_mapping[unique_id] = doc_message.document.file_id
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Сделать PDF", callback_data=f"convert_to_pdf_{unique_id}")]
+        [InlineKeyboardButton(
+            text="Сделать PDF",
+            callback_data=f"convert_to_pdf_{unique_id}")]
     ])
     await message.answer("Выберите действие:", reply_markup=keyboard)
 
     await state.clear()
+
 
 @router.callback_query(lambda c: c.data.startswith("convert_to_pdf_"))
 async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
