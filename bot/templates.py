@@ -80,9 +80,9 @@ def fill_complex_template(doc, data):
             break
 
     # Заполняем название компании
-    # doc.paragraphs[0].text = (
-    # f"Коммерческое предложение HRlink для компании “{data['company_name']}”."
-    # )
+    doc.paragraphs[0].text = (
+        f"Коммерческое предложение HRlink для компании “{data['company_name']}”."
+    )
 
     # Заполняем остальные поля
     doc.paragraphs[1].text = f"Дата: {data['date']}"
