@@ -1,8 +1,7 @@
 import os
 import uuid
-import threading
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -12,13 +11,18 @@ from dotenv import load_dotenv
 from docx import Document
 from io import BytesIO
 from PyPDF2 import PdfReader, PdfWriter
+from aiogram.enums.parse_mode import ParseMode
+from aiogram.client.default import DefaultBotProperties
 
 # Загрузка токена из .env
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
-bot = Bot(token=TOKEN)
+bot = Bot(
+    token=TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
+
 
 # Состояния для FSM
 class Form(StatesGroup):
@@ -32,11 +36,10 @@ class Form(StatesGroup):
     onprem_cost = State()
     onprem_count = State()
 
+
 # Словарь для хранения соответствия между уникальным идентификатором и file_id
 file_id_mapping = OrderedDict()
 
-# Словарь для хранения времени создания файлов
-file_creation_times = OrderedDict()
 
 # Функция для проверки и очистки данных
 def clean_input(value):
@@ -45,52 +48,42 @@ def clean_input(value):
     except ValueError:
         raise ValueError(f"Некорректное значение: {value}")
 
+
 # Функция для форматирования стоимости
 def format_cost(value):
     return f"{value:,.2f}".replace(',', ' ').replace('.', ',')
+
 
 # Функция для форматирования количества
 def format_count(value):
     return f"{int(value)}"
 
-# Функция для удаления старых файлов
-def cleanup_old_files():
-    while True:
-        current_time = datetime.now()
-        files_to_delete = []
-        for file_path, creation_time in file_creation_times.items():
-            if current_time - creation_time > timedelta(minutes=10):  # Удаляем файлы старше 10 минут
-                files_to_delete.append(file_path)
 
-        for file_path in files_to_delete:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            del file_creation_times[file_path]
+# Функция для удаления всех файлов, начинающихся на "КП_"
+def cleanup_kp_files():
+    current_dir = os.getcwd()
+    for filename in os.listdir(current_dir):
+        if filename.startswith("КП_") and filename.endswith(".docx"):
+            os.remove(os.path.join(current_dir, filename))
 
-        # Ограничиваем количество файлов до 5
-        while len(file_creation_times) > 5:
-            oldest_file = next(iter(file_creation_times))
-            if os.path.exists(oldest_file):
-                os.remove(oldest_file)
-            del file_creation_times[oldest_file]
-
-        threading.Event().wait(60)  # Проверяем каждую минуту
-
-# Запускаем поток для очистки старых файлов
-threading.Thread(target=cleanup_old_files, daemon=True).start()
 
 # Обработчик команды /start
 @dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer(
-        "Это бот для создания КП. Нажмите /kp для начала."
+        "Это бот для создания <b>КП</b>. Нажмите /kp для начала."
     )
+
 
 # Обработчик команды /kp
 @dp.message(Command("kp"))
 async def start_kp(message: types.Message, state: FSMContext):
+    # Удаляем все файлы, начинающиеся на "КП_"
+    cleanup_kp_files()
+
     await state.set_state(Form.base_license_cost)
-    await message.answer("Введите стоимость Базовой лицензии (руб/год):")
+    await message.answer("Введите <b>стоимость Базовой лицензии</b> (руб/год):")
+
 
 # Обработчик стоимости Базовой лицензии
 @dp.message(Form.base_license_cost)
@@ -99,9 +92,10 @@ async def process_base_license_cost(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
         await state.set_state(Form.base_license_count)
-        await message.answer("Введите количество Базовых лицензий:")
+        await message.answer("Введите <b>количество Базовых лицензий</b>:")
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Обработчик количества Базовых лицензий
 @dp.message(Form.base_license_count)
@@ -110,9 +104,10 @@ async def process_base_license_count(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
         await state.set_state(Form.hr_license_cost)
-        await message.answer("Введите стоимость лицензий кадровиков (руб/год):")
+        await message.answer("Введите <b>стоимость лицензий кадровиков</b> (руб/год):")
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Обработчик стоимости лицензий кадровиков
 @dp.message(Form.hr_license_cost)
@@ -121,9 +116,10 @@ async def process_hr_license_cost(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
         await state.set_state(Form.hr_license_count)
-        await message.answer("Введите количество лицензий кадровиков:")
+        await message.answer("Введите <b>количество лицензий кадровиков</b>:")
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Обработчик количества лицензий кадровиков
 @dp.message(Form.hr_license_count)
@@ -132,9 +128,10 @@ async def process_hr_license_count(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
         await state.set_state(Form.employee_license_cost)
-        await message.answer("Введите стоимость лицензии сотрудника (руб/год):")
+        await message.answer("Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Обработчик стоимости лицензии сотрудника
 @dp.message(Form.employee_license_cost)
@@ -143,9 +140,10 @@ async def process_employee_license_cost(message: types.Message, state: FSMContex
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
         await state.set_state(Form.employee_license_count)
-        await message.answer("Введите количество лицензий сотрудника:")
+        await message.answer("Введите <b>количество лицензий сотрудника</b>:")
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Обработчик количества лицензий сотрудника
 @dp.message(Form.employee_license_count)
@@ -164,6 +162,7 @@ async def process_employee_license_count(message: types.Message, state: FSMConte
     except ValueError as e:
         await message.answer(str(e))
 
+
 # Обработчик ответа на вопрос про on-prem
 @dp.callback_query(F.data.startswith("onprem_"))
 async def process_onprem_choice(callback: types.CallbackQuery, state: FSMContext):
@@ -172,12 +171,13 @@ async def process_onprem_choice(callback: types.CallbackQuery, state: FSMContext
     if choice == "yes":
         await state.update_data(need_onprem=True)
         await state.set_state(Form.onprem_cost)
-        await callback.message.answer("Введите сумму on-prem (руб/год):")
+        await callback.message.answer("Введите <b>сумму on-prem</b> (руб/год):")
     else:
         await state.update_data(need_onprem=False, onprem_cost=0, onprem_count=0)
         await generate_kp(callback.message, state)
 
     await callback.answer()
+
 
 # Обработчик суммы on-prem
 @dp.message(Form.onprem_cost)
@@ -186,9 +186,10 @@ async def process_onprem_cost(message: types.Message, state: FSMContext):
         value = clean_input(message.text)
         await state.update_data(onprem_cost=value)
         await state.set_state(Form.onprem_count)
-        await message.answer("Введите количество лицензий on-prem:")
+        await message.answer("Введите <b>количество лицензий on-prem</b>:")
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Обработчик количества лицензий on-prem
 @dp.message(Form.onprem_count)
@@ -199,6 +200,7 @@ async def process_onprem_count(message: types.Message, state: FSMContext):
         await generate_kp(message, state)
     except ValueError as e:
         await message.answer(str(e))
+
 
 # Генерация КП и отправка пользователю
 async def generate_kp(message: types.Message, state: FSMContext):
@@ -264,16 +266,16 @@ async def generate_kp(message: types.Message, state: FSMContext):
         del file_id_mapping[oldest_file_id]
 
     file_id_mapping[unique_id] = doc_message.document.file_id
-    file_creation_times[kp_filename] = datetime.now()
 
     # Создаем инлайн-кнопку для конвертации в PDF
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Сделать PDF", callback_data=f"convert_to_pdf_{unique_id}")]
     ])
-    await message.answer("Можно сделать из этого фала PDF формат.\nЖми кнопку ниже!", reply_markup=keyboard)
+    await message.answer("Выберите действие:", reply_markup=keyboard)
 
     # Очищаем состояние
     await state.clear()
+
 
 # Обработчик конвертации в PDF
 @dp.callback_query(F.data.startswith("convert_to_pdf_"))
@@ -307,6 +309,7 @@ async def convert_to_pdf(callback: types.CallbackQuery):
     )
 
     await callback.answer()
+
 
 # Запуск бота
 if __name__ == "__main__":
