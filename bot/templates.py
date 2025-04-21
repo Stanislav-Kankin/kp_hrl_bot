@@ -79,18 +79,6 @@ def fill_complex_template(doc, data):
             run2.font.size = Pt(18)
             break
 
-    # Заполняем название компании
-   # doc.paragraphs[0].text = (
-   #     f"Коммерческое предложение HRlink для компании “{data['company_name']}”."
-    # )
-
-    # Заполняем остальные поля
-   # doc.paragraphs[1].text = f"Дата: {data['date']}"
-   # doc.paragraphs[2].text = f"Срок действия: {data['validity_period']} дней"
-   # doc.paragraphs[3].text = (
-    #    f"Количество пользователей: {data['employee_count']} человек"
-     #   )
-
     # Если в шаблоне есть таблица, заполняем её
     if len(doc.tables) > 0:
         table = doc.tables[0]
