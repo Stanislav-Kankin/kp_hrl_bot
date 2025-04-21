@@ -1,12 +1,17 @@
 import os
+import uuid
+import threading
+from collections import OrderedDict
+from datetime import datetime, timedelta
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputFile
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dotenv import load_dotenv
 from docx import Document
-from datetime import datetime
+from io import BytesIO
+from PyPDF2 import PdfReader, PdfWriter
 
 # Загрузка токена из .env
 load_dotenv()
@@ -27,6 +32,12 @@ class Form(StatesGroup):
     onprem_cost = State()
     onprem_count = State()
 
+# Словарь для хранения соответствия между уникальным идентификатором и file_id
+file_id_mapping = OrderedDict()
+
+# Словарь для хранения времени создания файлов
+file_creation_times = OrderedDict()
+
 # Функция для проверки и очистки данных
 def clean_input(value):
     try:
@@ -41,6 +52,32 @@ def format_cost(value):
 # Функция для форматирования количества
 def format_count(value):
     return f"{int(value)}"
+
+# Функция для удаления старых файлов
+def cleanup_old_files():
+    while True:
+        current_time = datetime.now()
+        files_to_delete = []
+        for file_path, creation_time in file_creation_times.items():
+            if current_time - creation_time > timedelta(minutes=10):  # Удаляем файлы старше 10 минут
+                files_to_delete.append(file_path)
+
+        for file_path in files_to_delete:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            del file_creation_times[file_path]
+
+        # Ограничиваем количество файлов до 5
+        while len(file_creation_times) > 5:
+            oldest_file = next(iter(file_creation_times))
+            if os.path.exists(oldest_file):
+                os.remove(oldest_file)
+            del file_creation_times[oldest_file]
+
+        threading.Event().wait(60)  # Проверяем каждую минуту
+
+# Запускаем поток для очистки старых файлов
+threading.Thread(target=cleanup_old_files, daemon=True).start()
 
 # Обработчик команды /start
 @dp.message(Command("start"))
@@ -189,7 +226,13 @@ async def generate_kp(message: types.Message, state: FSMContext):
     if data["need_onprem"]:
         table.cell(4, 2).text = format_cost(data["onprem_cost"])  # Стоимость on-prem
         table.cell(4, 3).text = format_count(data["onprem_count"])  # Количество
+        table.cell(4, 4).text = "12"  # Срок, мес
         table.cell(4, 5).text = format_cost(data["onprem_cost"] * data["onprem_count"])  # Итого
+    else:
+        table.cell(4, 2).text = "-"  # Прочерк для стоимости on-prem
+        table.cell(4, 3).text = "-"  # Прочерк для количества on-prem
+        table.cell(4, 4).text = "-"  # Прочерк для срока, мес
+        table.cell(4, 5).text = "-"  # Прочерк для итого on-prem
 
     # Вычисляем итоговую сумму
     total = (data["base_license_cost"] * data["base_license_count"] +
@@ -206,10 +249,64 @@ async def generate_kp(message: types.Message, state: FSMContext):
     doc.save(kp_filename)
 
     # Отправляем файл пользователю
-    await message.answer_document(InputFile(kp_filename))
+    with open(kp_filename, 'rb') as file:
+        doc_message = await message.answer_document(
+            types.BufferedInputFile(file.read(), filename=kp_filename),
+            caption="Ваше КП готово! Вы можете скачать его или конвертировать в PDF."
+        )
+
+    # Генерируем уникальный идентификатор для callback_data
+    unique_id = str(uuid.uuid4())
+
+    # Ограничиваем количество файлов до 5
+    if len(file_id_mapping) >= 5:
+        oldest_file_id = next(iter(file_id_mapping))
+        del file_id_mapping[oldest_file_id]
+
+    file_id_mapping[unique_id] = doc_message.document.file_id
+    file_creation_times[kp_filename] = datetime.now()
+
+    # Создаем инлайн-кнопку для конвертации в PDF
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Сделать PDF", callback_data=f"convert_to_pdf_{unique_id}")]
+    ])
+    await message.answer("Можно сделать из этого фала PDF формат.\nЖми кнопку ниже!", reply_markup=keyboard)
 
     # Очищаем состояние
     await state.clear()
+
+# Обработчик конвертации в PDF
+@dp.callback_query(F.data.startswith("convert_to_pdf_"))
+async def convert_to_pdf(callback: types.CallbackQuery):
+    unique_id = callback.data.split("_")[3]
+    file_id = file_id_mapping.get(unique_id)
+
+    if not file_id:
+        await callback.message.answer("Файл не найден.")
+        await callback.answer()
+        return
+
+    file_info = await bot.get_file(file_id)
+    file_path = file_info.file_path
+
+    # Скачиваем файл
+    file = await bot.download_file(file_path)
+    doc_bytes = BytesIO(file.read())
+
+    # Конвертируем DOCX в PDF
+    pdf_bytes = BytesIO()
+    doc = Document(doc_bytes)
+    doc.save(pdf_bytes)
+    pdf_bytes.seek(0)
+
+    # Отправляем PDF пользователю
+    pdf_filename = f"КП_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    await callback.message.answer_document(
+        types.BufferedInputFile(pdf_bytes.read(), filename=pdf_filename),
+        caption="Ваше КП в формате PDF."
+    )
+
+    await callback.answer()
 
 # Запуск бота
 if __name__ == "__main__":
