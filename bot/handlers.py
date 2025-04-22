@@ -18,7 +18,10 @@ router = Router()
 @router.message(Command("start"))
 async def start(message: types.Message):
     await message.answer(
-        "Это бот для создания <b>КП</b>. Нажмите /kp для начала."
+        "Это бот для создания <b>КП</b>.\n"
+        "Нажмите /kp для начала.\n"
+        "Выбери актуальный шаблон КП.\n"
+        "После его формирование можно будет выгрузить его в формате PDF.",
         )
 
 
@@ -313,7 +316,8 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     with open(kp_filename, 'rb') as file:
         doc_message = await message.answer_document(
             types.BufferedInputFile(file.read(), filename=kp_filename),
-            caption="Ваше КП готово! Вы можете скачать его или конвертировать в PDF."
+            caption="Ваше КП готово!\n"
+            "Вы можете скачать его или конвертировать в PDF."
         )
 
     unique_id = str(uuid.uuid4())
@@ -329,7 +333,9 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
             text="Сделать PDF",
             callback_data=f"convert_to_pdf_{unique_id}")]
     ])
-    await message.answer("Выберите действие:", reply_markup=keyboard)
+    await message.answer(
+        "Нажми ниже для формирования PDF",
+        reply_markup=keyboard)
 
     await state.clear()
 
