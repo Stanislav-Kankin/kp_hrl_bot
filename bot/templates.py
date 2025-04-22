@@ -75,7 +75,9 @@ def fill_complex_template(doc, data):
     for paragraph in doc.paragraphs:
         if "Коммерческое предложение HRlink для компании" in paragraph.text:
             paragraph.clear()
-            run1 = paragraph.add_run("Коммерческое предложение HRlink для компании ")
+            run1 = paragraph.add_run(
+                "Коммерческое предложение HRlink для компании "
+                )
             run1.bold = True
             run1.font.size = Pt(18)
             run2 = paragraph.add_run(f'"{company_name}"')
@@ -115,5 +117,6 @@ def fill_complex_template(doc, data):
 
         total = (data["base_license_cost"] * data["base_license_count"] +
                  data["hr_license_cost"] * data["hr_license_count"] +
-                 data["employee_license_cost"] * data["employee_license_count"])
+                 data["employee_license_cost"] * data[
+                     "employee_license_count"])
         fill_cell(4, 5, format_cost(total), bold=True)
