@@ -2,6 +2,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class FormStandard(StatesGroup):
+    is_standard_pricing = State()
     base_license_cost = State()
     base_license_count = State()
     hr_license_cost = State()
@@ -14,7 +15,8 @@ class FormStandard(StatesGroup):
 
 
 class FormComplex(StatesGroup):
-    company_name = State()  # Состояние для имени компании
+    company_name = State()
+    is_standard_pricing = State()
     base_license_cost = State()
     base_license_count = State()
     hr_license_cost = State()
