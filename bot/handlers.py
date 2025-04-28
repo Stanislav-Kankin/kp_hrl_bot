@@ -62,7 +62,8 @@ async def process_template_choice(callback: types.CallbackQuery,
                 callback_data="standard_pricing_no")]
         ])
         await callback.message.answer(
-            "Стоимость Базовой лицензии и Лицензии Кадровика стандартная? (15 000,00 руб/год)",
+            "Стоимость Базовой лицензии и Лицензии "
+            "Кадровика стандартная? (15 000,00 руб/год)",
             reply_markup=keyboard
         )
     await callback.answer()
@@ -126,7 +127,8 @@ async def process_company_name(message: types.Message, state: FSMContext):
             callback_data="standard_pricing_no")]
     ])
     await message.answer(
-        "Стоимость Базовой лицензии и Лицензии Кадровика стандартная? (15 000,00 руб/год)",
+        "Стоимость Базовой лицензии и Лицензии "
+        "Кадровика стандартная? (15 000,00 руб/год)",
         reply_markup=keyboard
     )
 
