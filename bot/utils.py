@@ -10,13 +10,14 @@ file_id_mapping = OrderedDict()
 
 def clean_input(value):
     try:
-        return float(value.replace(',', '.').strip())
+        # Округляем до целого числа
+        return int(round(float(value.replace(',', '.').strip())))
     except ValueError:
         raise ValueError(f"Некорректное значение: {value}")
 
 
 def format_cost(value):
-    return f"{value:,.2f}".replace(',', ' ').replace('.', ',')
+    return f"{int(round(float(value))):,}".replace(',', ' ')
 
 
 def format_count(value):
