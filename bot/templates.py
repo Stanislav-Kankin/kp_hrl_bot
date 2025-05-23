@@ -47,49 +47,46 @@ def fill_standard_template(doc, data):
     fill_cell(3, 5, format_cost(
         data["employee_license_cost"] * data["employee_license_count"]))
 
-    if data["need_onprem"]:
+    # Обработка onprem в зависимости от выбранного шаблона
+    if data.get("template_choice") == "standard_onprem" and len(table.rows) > 4:
         fill_cell(4, 2, format_cost(data["onprem_cost"]))
         fill_cell(4, 3, format_count(data["onprem_count"]))
         fill_cell(4, 4, "12")
         fill_cell(4, 5, format_cost(
             data["onprem_cost"] * data["onprem_count"]))
-    else:
+    elif len(table.rows) > 4:  # Если есть строка onprem в шаблоне, но не выбрано
         fill_cell(4, 2, "-")
         fill_cell(4, 3, "-")
         fill_cell(4, 4, "-")
         fill_cell(4, 5, "-")
 
+    # Расчет итоговой суммы
     total = (data["base_license_cost"] * data["base_license_count"] +
              data["hr_license_cost"] * data["hr_license_count"] +
              data["employee_license_cost"] * data["employee_license_count"])
-    if data["need_onprem"]:
+
+    if data.get("template_choice") == "standard_onprem":
         total += data["onprem_cost"] * data["onprem_count"]
 
-    fill_cell(5, 5, format_cost(total), bold=True)
+    # Заполнение итоговой строки
+    fill_cell(5 if len(table.rows) > 5 else 4, 5, format_cost(total), bold=True)
 
 
-def fill_complex_template(doc, data):
+def fill_marketing_template(doc, data):
     set_montserrat_font(doc)
     company_name = data.get('company_name', '')
 
     for paragraph in doc.paragraphs:
-        if "Коммерческое предложение HRlink для компании" in paragraph.text:
+        if "Коммерческое предложение HRlink для" in paragraph.text:
             paragraph.clear()
-            run1 = paragraph.add_run(
-                "Коммерческое предложение HRlink для компании "
-                )
-            run1.bold = True
-            run1.font.size = Pt(18)
-            run2 = paragraph.add_run(f'"{company_name}"')
-            run2.bold = True
-            run2.font.color.rgb = RGBColor(0x44, 0x9D, 0xE6)
-            run2.font.size = Pt(18)
+            run = paragraph.add_run(f"Коммерческое предложение HRlink для {company_name}")
+            run.bold = True
+            run.font.size = Pt(18)
             break
 
     if len(doc.tables) > 0:
         table = doc.tables[0]
 
-        # Аналогичное форматирование для комплексного шаблона
         def fill_cell(row, col, text, bold=False):
             cell = table.cell(row, col)
             cell.text = text
@@ -117,6 +114,57 @@ def fill_complex_template(doc, data):
 
         total = (data["base_license_cost"] * data["base_license_count"] +
                  data["hr_license_cost"] * data["hr_license_count"] +
-                 data["employee_license_cost"] * data[
-                     "employee_license_count"])
+                 data["employee_license_cost"] * data["employee_license_count"])
+        fill_cell(4, 5, format_cost(total), bold=True)
+
+
+def fill_complex_template(doc, data):
+    set_montserrat_font(doc)
+    company_name = data.get('company_name', '')
+
+    for paragraph in doc.paragraphs:
+        if "Коммерческое предложение HRlink для компании" in paragraph.text:
+            paragraph.clear()
+            run1 = paragraph.add_run(
+                "Коммерческое предложение HRlink для компании "
+                )
+            run1.bold = True
+            run1.font.size = Pt(18)
+            run2 = paragraph.add_run(f'"{company_name}"')
+            run2.bold = True
+            run2.font.color.rgb = RGBColor(0x44, 0x9D, 0xE6)
+            run2.font.size = Pt(18)
+            break
+
+    if len(doc.tables) > 0:
+        table = doc.tables[0]
+
+        def fill_cell(row, col, text, bold=False):
+            cell = table.cell(row, col)
+            cell.text = text
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in paragraph.runs:
+                    run.bold = bold
+                    run.font.name = 'Montserrat'
+                    run.font.size = Pt(10)
+
+        fill_cell(1, 2, format_cost(data["base_license_cost"]))
+        fill_cell(1, 3, format_count(data["base_license_count"]))
+        fill_cell(1, 5, format_cost(
+            data["base_license_cost"] * data["base_license_count"]))
+
+        fill_cell(2, 2, format_cost(data["hr_license_cost"]))
+        fill_cell(2, 3, format_count(data["hr_license_count"]))
+        fill_cell(2, 5, format_cost(
+            data["hr_license_cost"] * data["hr_license_count"]))
+
+        fill_cell(3, 2, format_cost(data["employee_license_cost"]))
+        fill_cell(3, 3, format_count(data["employee_license_count"]))
+        fill_cell(3, 5, format_cost(
+            data["employee_license_cost"] * data["employee_license_count"]))
+
+        total = (data["base_license_cost"] * data["base_license_count"] +
+                 data["hr_license_cost"] * data["hr_license_count"] +
+                 data["employee_license_cost"] * data["employee_license_count"])
         fill_cell(4, 5, format_cost(total), bold=True)
