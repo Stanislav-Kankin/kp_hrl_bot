@@ -8,7 +8,7 @@ def load_template(template_name):
     return Document(f"templates/{template_name}")
 
 
-def fill_standard_template(doc, data):
+def fill_standard_template(doc, data, include_onprem=False):
     table = doc.tables[0]
     set_montserrat_font(doc)
 
@@ -47,14 +47,14 @@ def fill_standard_template(doc, data):
     fill_cell(3, 5, format_cost(
         data["employee_license_cost"] * data["employee_license_count"]))
 
-    # Обработка onprem в зависимости от выбранного шаблона
-    if data.get("template_choice") == "standard_onprem" and len(table.rows) > 4:
+    # Обработка onprem
+    if include_onprem:
         fill_cell(4, 2, format_cost(data["onprem_cost"]))
         fill_cell(4, 3, format_count(data["onprem_count"]))
         fill_cell(4, 4, "12")
         fill_cell(4, 5, format_cost(
             data["onprem_cost"] * data["onprem_count"]))
-    elif len(table.rows) > 4:  # Если есть строка onprem в шаблоне, но не выбрано
+    elif len(table.rows) > 4:  # Если есть строка onprem в шаблоне, но не нужно заполнять
         fill_cell(4, 2, "-")
         fill_cell(4, 3, "-")
         fill_cell(4, 4, "-")
@@ -64,12 +64,13 @@ def fill_standard_template(doc, data):
     total = (data["base_license_cost"] * data["base_license_count"] +
              data["hr_license_cost"] * data["hr_license_count"] +
              data["employee_license_cost"] * data["employee_license_count"])
-
-    if data.get("template_choice") == "standard_onprem":
+    
+    if include_onprem:
         total += data["onprem_cost"] * data["onprem_count"]
 
     # Заполнение итоговой строки
-    fill_cell(5 if len(table.rows) > 5 else 4, 5, format_cost(total), bold=True)
+    last_row = 5 if include_onprem and len(table.rows) > 4 else 4
+    fill_cell(last_row, 5, format_cost(total), bold=True)
 
 
 def fill_marketing_template(doc, data):

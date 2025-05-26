@@ -64,22 +64,7 @@ async def process_template_choice(callback: types.CallbackQuery,
     elif template_choice == "marketing":
         await state.set_state(FormMarketing.company_name)
         await callback.message.answer("Введите <b>название компании</b>:")
-    elif template_choice == "standard_onprem":
-        await state.set_state(FormStandard.is_standard_pricing)
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(
-                text="Да",
-                callback_data="standard_pricing_yes")],
-            [InlineKeyboardButton(
-                text="Нет",
-                callback_data="standard_pricing_no")]
-        ])
-        await callback.message.answer(
-            "Стоимость Базовой лицензии и Лицензии "
-            "Кадровика стандартная? (15 000,00 руб/год)",
-            reply_markup=keyboard
-        )
-    else:  # template_standard
+    else:  # standard или standard_onprem
         await state.set_state(FormStandard.is_standard_pricing)
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(
@@ -95,6 +80,7 @@ async def process_template_choice(callback: types.CallbackQuery,
             reply_markup=keyboard
         )
     await callback.answer()
+
 
 
 @router.callback_query(lambda c: c.data.startswith("standard_pricing_"))
@@ -459,7 +445,7 @@ async def process_employee_license_count_standard(message: types.Message,
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
-
+        
         data = await state.get_data()
         if data.get("template_choice") == "standard_onprem":
             await state.set_state(FormStandard.onprem_cost)
@@ -556,18 +542,23 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
         if "hr_license_cost" not in data:
             data["hr_license_cost"] = 15000
 
+    # Выбираем правильный шаблон
     if template_choice == "standard_onprem":
         doc = load_template("template.docx")
-        fill_standard_template(doc, data)
     elif template_choice == "standard":
         doc = load_template("template_no_onprem.docx")
-        fill_standard_template(doc, data)
     elif template_choice == "marketing":
         doc = load_template("template_.docx")
-        fill_marketing_template(doc, data)
     else:  # complex
         doc = load_template("template_complex.docx")
+
+    # Заполняем шаблон в зависимости от типа
+    if template_choice == "marketing":
+        fill_marketing_template(doc, data)
+    elif template_choice == "complex":
         fill_complex_template(doc, data)
+    else:
+        fill_standard_template(doc, data)
 
     # Добавляем дату действия в нижний колонтитул
     for section in doc.sections:
