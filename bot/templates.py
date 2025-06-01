@@ -143,6 +143,7 @@ def fill_marketing_template(doc, data):
                         run.bold = True
                         run.font.size = Pt(18)
                         run.font.name = 'Montserrat'
+                        run.font.color.rgb = RGBColor(255, 255, 255)
                         break
 
     if len(doc.tables) <= 2:
