@@ -98,3 +98,79 @@ def fill_complex_template(doc, data):
                 for run in paragraph.runs:
                     run.bold = bold
                     run.font.name = 'Montserrat'
+
+
+def fill_marketing_template(doc, data):
+    set_montserrat_font(doc)
+    company_name = data.get('company_name', '')
+
+    # Найдём ячейку с текстом "HRlink для"
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    if "HRlink для" in paragraph.text:
+                        paragraph.clear()
+                        run = paragraph.add_run(f"HRlink для {company_name}")
+                        run.bold = True
+                        run.font.size = Pt(18)
+                        run.font.name = 'Montserrat'
+                        break
+
+    # Таблица с ценами — это таблица №2
+    if len(doc.tables) <= 2:
+        print("[!] Таблица с ценами не найдена.")
+        return
+
+    table = doc.tables[2]
+    rows_count = len(table.rows)
+    cols_count = len(table.columns)
+
+    def fill_cell(row, col, text, bold=False):
+        if row >= rows_count or col >= cols_count:
+            print(f"[!] Нет ячейки ({row}, {col}) в таблице {rows_count}x{cols_count}")
+            return
+        cell = table.cell(row, col)
+        cell.text = text
+        for paragraph in cell.paragraphs:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in paragraph.runs:
+                run.bold = bold
+                run.font.name = 'Montserrat'
+
+    # Заполняем строки таблицы
+    fill_cell(1, 1, format_cost(data["base_license_cost"]))
+    fill_cell(1, 2, format_count(data["base_license_count"]))
+    fill_cell(1, 3, "12 мес.")
+    fill_cell(1, 4, format_cost(
+        data["base_license_cost"] * data["base_license_count"]))
+
+    fill_cell(2, 1, format_cost(data["hr_license_cost"]))
+    fill_cell(2, 2, format_count(data["hr_license_count"]))
+    fill_cell(2, 3, "12 мес.")
+    fill_cell(2, 4, format_cost(
+        data["hr_license_cost"] * data["hr_license_count"]))
+
+    fill_cell(3, 1, format_cost(data["employee_license_cost"]))
+    fill_cell(3, 2, format_count(data["employee_license_count"]))
+    fill_cell(3, 3, "12 мес.")
+    fill_cell(3, 4, format_cost(
+        data["employee_license_cost"] * data["employee_license_count"]))
+
+    total = (
+        data["base_license_cost"] * data["base_license_count"] +
+        data["hr_license_cost"] * data["hr_license_count"] +
+        data["employee_license_cost"] * data["employee_license_count"]
+    )
+
+    if data.get("need_onprem", False):
+        fill_cell(4, 1, format_cost(data["onprem_cost"]))
+        fill_cell(4, 2, format_count(data["onprem_count"]))
+        fill_cell(4, 3, "12 мес.")
+        fill_cell(4, 4, format_cost(
+            data["onprem_cost"] * data["onprem_count"]))
+        total += data["onprem_cost"] * data["onprem_count"]
+
+    total_row = 5 if data.get("need_onprem", False) else 4
+    fill_cell(total_row, 4, format_cost(total), bold=True)
+

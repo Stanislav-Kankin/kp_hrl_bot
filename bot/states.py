@@ -27,6 +27,7 @@ class FormComplex(StatesGroup):
 
 class FormMarketing(StatesGroup):
     company_name = State()
+    is_standard_pricing = State()
     base_license_cost = State()
     base_license_count = State()
     hr_license_cost = State()
