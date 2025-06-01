@@ -26,6 +26,7 @@ async def start(message: types.Message):
 
 
 @router.message(Command("kp"))
+@router.message(Command("kp"))
 async def start_kp(message: types.Message, state: FSMContext):
     cleanup_kp_files()
 
@@ -37,9 +38,14 @@ async def start_kp(message: types.Message, state: FSMContext):
         [InlineKeyboardButton(
             text="HRL комплекс",
             callback_data="template_complex"
+            )],
+        [InlineKeyboardButton(
+            text="Шаблон Маркетинг (общий)",
+            callback_data="template_marketing"
             )]
     ])
     await message.answer("Какой шаблон КП интересует?", reply_markup=keyboard)
+
 
 
 @router.callback_query(lambda c: c.data.startswith("template_"))
