@@ -12,6 +12,7 @@ class FormStandard(StatesGroup):
     need_onprem = State()
     onprem_cost = State()
     onprem_count = State()
+    kp_expiration = State()
 
 
 class FormComplex(StatesGroup):
@@ -23,6 +24,7 @@ class FormComplex(StatesGroup):
     hr_license_count = State()
     employee_license_cost = State()
     employee_license_count = State()
+    kp_expiration = State()
 
 
 class FormMarketing(StatesGroup):
@@ -37,3 +39,4 @@ class FormMarketing(StatesGroup):
     need_onprem = State()
     onprem_cost = State()
     onprem_count = State()
+    kp_expiration = State()

@@ -54,8 +54,6 @@ def fill_standard_template(doc, data):
             fill_cell(4, 4, "12")
             fill_cell(4, 5, format_cost(
                 data["onprem_cost"] * data["onprem_count"]))
-        else:
-            pass
 
     total = (data["base_license_cost"] * data["base_license_count"] +
              data["hr_license_cost"] * data["hr_license_count"] +
@@ -67,6 +65,8 @@ def fill_standard_template(doc, data):
         fill_cell(5, 5, format_cost(total), bold=True)
     elif rows > 4:
         fill_cell(4, 5, format_cost(total), bold=True)
+
+    insert_footer_expiration(doc, data.get("kp_expiration", ""))
 
 
 def fill_complex_template(doc, data):
@@ -99,12 +99,40 @@ def fill_complex_template(doc, data):
                     run.bold = bold
                     run.font.name = 'Montserrat'
 
+        fill_cell(1, 2, format_cost(data["base_license_cost"]))
+        fill_cell(1, 3, format_count(data["base_license_count"]))
+        fill_cell(1, 5, format_cost(data["base_license_cost"] * data["base_license_count"]))
+
+        fill_cell(2, 2, format_cost(data["hr_license_cost"]))
+        fill_cell(2, 3, format_count(data["hr_license_count"]))
+        fill_cell(2, 5, format_cost(data["hr_license_cost"] * data["hr_license_count"]))
+
+        fill_cell(3, 2, format_cost(data["employee_license_cost"]))
+        fill_cell(3, 3, format_count(data["employee_license_count"]))
+        fill_cell(3, 5, format_cost(data["employee_license_cost"] * data["employee_license_count"]))
+
+        if data.get("need_onprem"):
+            fill_cell(4, 2, format_cost(data["onprem_cost"]))
+            fill_cell(4, 3, format_count(data["onprem_count"]))
+            fill_cell(4, 4, "12")
+            fill_cell(4, 5, format_cost(data["onprem_cost"] * data["onprem_count"]))
+
+        total = (data["base_license_cost"] * data["base_license_count"] +
+                 data["hr_license_cost"] * data["hr_license_count"] +
+                 data["employee_license_cost"] * data["employee_license_count"])
+        if data.get("need_onprem"):
+            total += data["onprem_cost"] * data["onprem_count"]
+
+        total_row = 5 if data.get("need_onprem") else 4
+        fill_cell(total_row, 5, format_cost(total), bold=True)
+
+    insert_footer_expiration(doc, data.get("kp_expiration", ""))
+
 
 def fill_marketing_template(doc, data):
     set_montserrat_font(doc)
     company_name = data.get('company_name', '')
 
-    # Найдём ячейку с текстом "HRlink для"
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
@@ -117,7 +145,6 @@ def fill_marketing_template(doc, data):
                         run.font.name = 'Montserrat'
                         break
 
-    # Таблица с ценами — это таблица №2
     if len(doc.tables) <= 2:
         print("[!] Таблица с ценами не найдена.")
         return
@@ -138,7 +165,6 @@ def fill_marketing_template(doc, data):
                 run.bold = bold
                 run.font.name = 'Montserrat'
 
-    # Заполняем строки таблицы
     fill_cell(1, 1, format_cost(data["base_license_cost"]))
     fill_cell(1, 2, format_count(data["base_license_count"]))
     fill_cell(1, 3, "12 мес.")
@@ -174,3 +200,14 @@ def fill_marketing_template(doc, data):
     total_row = 5 if data.get("need_onprem", False) else 4
     fill_cell(total_row, 4, format_cost(total), bold=True)
 
+    insert_footer_expiration(doc, data.get("kp_expiration", ""))
+
+
+def insert_footer_expiration(doc, date_text):
+    for section in doc.sections:
+        footer = section.footer
+        paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        paragraph.text = f"Коммерческое предложение действительно до {date_text}"
+        run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+        run.font.size = Pt(10)
+        run.font.name = 'Montserrat'

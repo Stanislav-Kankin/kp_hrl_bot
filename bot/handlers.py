@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime
 from io import BytesIO
 from docx import Document
+import re
 
 router = Router()
 
@@ -479,7 +480,8 @@ async def process_employee_license_count_complex(message: types.Message,
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
-        await generate_kp(message.bot, message, state)
+        await state.set_state(FormComplex.kp_expiration)
+        await message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
@@ -536,7 +538,8 @@ async def process_onprem_count_standard(message: types.Message, state: FSMContex
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_count=value)
-        await generate_kp(message.bot, message, state)
+        await state.set_state(FormStandard.kp_expiration)
+        await message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
@@ -547,7 +550,8 @@ async def process_onprem_count_marketing(message: types.Message, state: FSMConte
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_count=value)
-        await generate_kp(message.bot, message, state)
+        await state.set_state(FormMarketing.kp_expiration)
+        await message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
@@ -632,3 +636,17 @@ async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
     )
 
     await callback.answer()
+
+
+@router.message(FormStandard.kp_expiration)
+@router.message(FormMarketing.kp_expiration)
+@router.message(FormComplex.kp_expiration)
+async def process_kp_expiration(message: types.Message, state: FSMContext):
+    date_text = message.text.strip()
+
+    if not re.match(r"^\d{2}\.\d{2}\.\d{4}$", date_text):
+        await message.answer("⛔️ Пожалуйста, введите дату в формате <b>дд.мм.гггг</b>, например: 30.06.2025")
+        return
+
+    await state.update_data(kp_expiration=date_text)
+    await generate_kp(message.bot, message, state)
