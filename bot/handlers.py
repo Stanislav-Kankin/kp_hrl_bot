@@ -396,7 +396,7 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
             data["hr_license_cost"] = 15000
 
     if template_choice == "standard":
-        doc = load_template("template.docx")
+        doc = load_template("template.docx", need_onprem=data.get("need_onprem", True))
         fill_standard_template(doc, data)
     else:
         doc = load_template("template_complex.docx")
