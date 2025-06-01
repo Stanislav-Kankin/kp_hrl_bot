@@ -495,16 +495,24 @@ async def process_onprem_choice(callback: types.CallbackQuery,
 
     if choice == "yes":
         await state.update_data(need_onprem=True)
-        if "FormStandard" in str(current_state):
-            await state.set_state(FormStandard.onprem_cost)
-        elif "FormMarketing" in str(current_state):
-            await state.set_state(FormMarketing.onprem_cost)
-        await callback.message.answer(
-            "Введите <b>сумму on-prem</b> (руб/год):")
+        await state.set_state(FormStandard.onprem_cost)
+        await callback.message.answer("Введите <b>сумму on-prem</b> (руб/год):")
     else:
         await state.update_data(
-            need_onprem=False, onprem_cost=0, onprem_count=0)
-        await generate_kp(callback.bot, callback.message, state)
+            need_onprem=False,
+            onprem_cost=0,
+            onprem_count=0
+        )
+
+        # ⬇️ Вместо генерации — спросим дату
+        if "FormStandard" in str(current_state):
+            await state.set_state(FormStandard.kp_expiration)
+        elif "FormMarketing" in str(current_state):
+            await state.set_state(FormMarketing.kp_expiration)
+        elif "FormComplex" in str(current_state):
+            await state.set_state(FormComplex.kp_expiration)
+
+        await callback.message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
 
     await callback.answer()
 

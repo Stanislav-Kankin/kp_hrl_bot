@@ -207,7 +207,7 @@ def insert_footer_expiration(doc, date_text):
     for section in doc.sections:
         footer = section.footer
         paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-        paragraph.text = f"Коммерческое предложение действительно до {date_text}"
+        paragraph.text = f"Коммерческое предложение действительно до {date_text} г."
         run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
         run.font.size = Pt(10)
         run.font.name = 'Montserrat'
