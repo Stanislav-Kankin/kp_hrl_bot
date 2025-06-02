@@ -16,8 +16,9 @@ def clean_input(value):
         raise ValueError(f"Некорректное значение: {value}")
 
 
-def format_cost(value):
-    return f"{int(round(float(value))):,}".replace(',', ' ')
+def format_cost(value, with_ruble=False):
+    text = f"{int(round(float(value))):,}".replace(',', ' ')
+    return f"{text} ₽" if with_ruble else text
 
 
 def format_count(value):

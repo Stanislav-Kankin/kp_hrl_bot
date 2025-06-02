@@ -166,37 +166,38 @@ def fill_marketing_template(doc, data):
                 run.bold = bold
                 run.font.name = 'Montserrat'
 
-    fill_cell(1, 1, format_cost(data["base_license_cost"]))
+    fill_cell(1, 1, format_cost(data["base_license_cost"], with_ruble=True))
     fill_cell(1, 2, format_count(data["base_license_count"]))
     fill_cell(1, 3, "12 мес.")
     fill_cell(1, 4, format_cost(
         data["base_license_cost"] * data["base_license_count"]))
 
-    fill_cell(2, 1, format_cost(data["hr_license_cost"]))
+    fill_cell(2, 1, format_cost(data["hr_license_cost"], with_ruble=True))
     fill_cell(2, 2, format_count(data["hr_license_count"]))
     fill_cell(2, 3, "12 мес.")
     fill_cell(2, 4, format_cost(
         data["hr_license_cost"] * data["hr_license_count"]))
 
-    fill_cell(3, 1, format_cost(data["employee_license_cost"]))
+    fill_cell(3, 1, format_cost(data["employee_license_cost"], with_ruble=True))
     fill_cell(3, 2, format_count(data["employee_license_count"]))
     fill_cell(3, 3, "12 мес.")
     fill_cell(3, 4, format_cost(
-        data["employee_license_cost"] * data["employee_license_count"]))
+        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
 
     total = (
         data["base_license_cost"] * data["base_license_count"] +
         data["hr_license_cost"] * data["hr_license_count"] +
-        data["employee_license_cost"] * data["employee_license_count"]
+        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True
     )
 
     if data.get("need_onprem", False):
-        fill_cell(4, 1, format_cost(data["onprem_cost"]))
+        fill_cell(4, 1, format_cost(data["onprem_cost"], with_ruble=True))
         fill_cell(4, 2, format_count(data["onprem_count"]))
         fill_cell(4, 3, "12 мес.")
         fill_cell(4, 4, format_cost(
             data["onprem_cost"] * data["onprem_count"]))
-        total += data["onprem_cost"] * data["onprem_count"]
+        total += data["onprem_cost"] * data["onprem_count"],
+    with_ruble=True
 
     total_row = 5 if data.get("need_onprem", False) else 4
     fill_cell(total_row, 4, format_cost(total), bold=True)
