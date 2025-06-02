@@ -187,7 +187,7 @@ def fill_marketing_template(doc, data):
     total = (
         data["base_license_cost"] * data["base_license_count"] +
         data["hr_license_cost"] * data["hr_license_count"] +
-        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True
+        data["employee_license_cost"] * data["employee_license_count"]
     )
 
     if data.get("need_onprem", False):
@@ -196,8 +196,7 @@ def fill_marketing_template(doc, data):
         fill_cell(4, 3, "12 мес.")
         fill_cell(4, 4, format_cost(
             data["onprem_cost"] * data["onprem_count"]))
-        total += data["onprem_cost"] * data["onprem_count"],
-    with_ruble=True
+        total += data["onprem_cost"] * data["onprem_count"]
 
     total_row = 5 if data.get("need_onprem", False) else 4
     fill_cell(total_row, 4, format_cost(total), bold=True)
