@@ -212,3 +212,5 @@ def insert_footer_expiration(doc, date_text):
         run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
         run.font.size = Pt(10)
         run.font.name = 'Montserrat'
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0, 102, 204)
