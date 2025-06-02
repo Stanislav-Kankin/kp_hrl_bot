@@ -31,29 +31,29 @@ def fill_standard_template(doc, data):
                 run.font.name = 'Montserrat'
                 run.font.size = Pt(10)
 
-    fill_cell(1, 2, format_cost(data["base_license_cost"]))
+    fill_cell(1, 2, format_cost(data["base_license_cost"], with_ruble=True))
     fill_cell(1, 3, format_count(data["base_license_count"]))
     fill_cell(1, 5, format_cost(
-        data["base_license_cost"] * data["base_license_count"]))
+        data["base_license_cost"] * data["base_license_count"], with_ruble=True))
 
-    fill_cell(2, 2, format_cost(data["hr_license_cost"]))
+    fill_cell(2, 2, format_cost(data["hr_license_cost"], with_ruble=True))
     fill_cell(2, 3, format_count(data["hr_license_count"]))
     fill_cell(2, 5, format_cost(
-        data["hr_license_cost"] * data["hr_license_count"]))
+        data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
 
-    fill_cell(3, 2, format_cost(data["employee_license_cost"]))
+    fill_cell(3, 2, format_cost(data["employee_license_cost"], with_ruble=True))
     fill_cell(3, 3, format_count(data["employee_license_count"]))
     fill_cell(3, 5, format_cost(
-        data["employee_license_cost"] * data["employee_license_count"]))
+        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
 
     rows = len(table.rows)
     if rows > 4:
         if data["need_onprem"]:
-            fill_cell(4, 2, format_cost(data["onprem_cost"]))
+            fill_cell(4, 2, format_cost(data["onprem_cost"], with_ruble=True))
             fill_cell(4, 3, format_count(data["onprem_count"]))
             fill_cell(4, 4, "12")
             fill_cell(4, 5, format_cost(
-                data["onprem_cost"] * data["onprem_count"]))
+                data["onprem_cost"] * data["onprem_count"], with_ruble=True))
 
     total = (data["base_license_cost"] * data["base_license_count"] +
              data["hr_license_cost"] * data["hr_license_count"] +
@@ -62,9 +62,9 @@ def fill_standard_template(doc, data):
         total += data["onprem_cost"] * data["onprem_count"]
 
     if rows > 5:
-        fill_cell(5, 5, format_cost(total), bold=True)
+        fill_cell(5, 5, format_cost(total, with_ruble=True), bold=True)
     elif rows > 4:
-        fill_cell(4, 5, format_cost(total), bold=True)
+        fill_cell(4, 5, format_cost(total, with_ruble=True), bold=True)
 
     insert_footer_expiration(doc, data.get("kp_expiration", ""))
 
@@ -99,23 +99,23 @@ def fill_complex_template(doc, data):
                     run.bold = bold
                     run.font.name = 'Montserrat'
 
-        fill_cell(1, 2, format_cost(data["base_license_cost"]))
+        fill_cell(1, 2, format_cost(data["base_license_cost"], with_ruble=True))
         fill_cell(1, 3, format_count(data["base_license_count"]))
-        fill_cell(1, 5, format_cost(data["base_license_cost"] * data["base_license_count"]))
+        fill_cell(1, 5, format_cost(data["base_license_cost"] * data["base_license_count"], with_ruble=True))
 
-        fill_cell(2, 2, format_cost(data["hr_license_cost"]))
+        fill_cell(2, 2, format_cost(data["hr_license_cost"], with_ruble=True))
         fill_cell(2, 3, format_count(data["hr_license_count"]))
-        fill_cell(2, 5, format_cost(data["hr_license_cost"] * data["hr_license_count"]))
+        fill_cell(2, 5, format_cost(data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
 
-        fill_cell(3, 2, format_cost(data["employee_license_cost"]))
+        fill_cell(3, 2, format_cost(data["employee_license_cost"], with_ruble=True))
         fill_cell(3, 3, format_count(data["employee_license_count"]))
-        fill_cell(3, 5, format_cost(data["employee_license_cost"] * data["employee_license_count"]))
+        fill_cell(3, 5, format_cost(data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
 
         if data.get("need_onprem"):
-            fill_cell(4, 2, format_cost(data["onprem_cost"]))
+            fill_cell(4, 2, format_cost(data["onprem_cost"], with_ruble=True))
             fill_cell(4, 3, format_count(data["onprem_count"]))
             fill_cell(4, 4, "12")
-            fill_cell(4, 5, format_cost(data["onprem_cost"] * data["onprem_count"]))
+            fill_cell(4, 5, format_cost(data["onprem_cost"] * data["onprem_count"], with_ruble=True))
 
         total = (data["base_license_cost"] * data["base_license_count"] +
                  data["hr_license_cost"] * data["hr_license_count"] +
@@ -124,7 +124,7 @@ def fill_complex_template(doc, data):
             total += data["onprem_cost"] * data["onprem_count"]
 
         total_row = 5 if data.get("need_onprem") else 4
-        fill_cell(total_row, 5, format_cost(total), bold=True)
+        fill_cell(total_row, 5, format_cost(total, with_ruble=True), bold=True)
 
     insert_footer_expiration(doc, data.get("kp_expiration", ""))
 
