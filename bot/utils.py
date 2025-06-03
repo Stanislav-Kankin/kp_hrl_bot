@@ -57,7 +57,8 @@ def set_montserrat_font(doc):
 
 def convert_to_pdf_libreoffice(docx_path: str) -> str | None:
     if not shutil.which("libreoffice") and not shutil.which("soffice"):
-        raise RuntimeError("LibreOffice (libreoffice или soffice) не найдена в системе.")
+        raise RuntimeError(
+            "LibreOffice (libreoffice или soffice) не найдена в системе.")
 
     if not os.path.exists(docx_path):
         raise FileNotFoundError(f"Файл не найден: {docx_path}")
@@ -66,13 +67,23 @@ def convert_to_pdf_libreoffice(docx_path: str) -> str | None:
 
     try:
         subprocess.run(
-            ["xvfb-run", "libreoffice", "--headless", "--convert-to", "pdf", docx_path, "--outdir", output_dir],
+            [
+                "xvfb-run",
+                "libreoffice",
+                "--headless",
+                "--convert-to",
+                "pdf",
+                docx_path,
+                "--outdir",
+                output_dir
+                ],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Ошибка конвертации LibreOffice:\n{e.stderr.decode()}")
+        raise RuntimeError(
+            f"Ошибка конвертации LibreOffice:\n{e.stderr.decode()}")
 
     base_name = os.path.splitext(os.path.basename(docx_path))[0]
     pdf_path = os.path.join(output_dir, f"{base_name}.pdf")

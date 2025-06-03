@@ -34,17 +34,20 @@ def fill_standard_template(doc, data):
     fill_cell(1, 2, format_cost(data["base_license_cost"], with_ruble=True))
     fill_cell(1, 3, format_count(data["base_license_count"]))
     fill_cell(1, 5, format_cost(
-        data["base_license_cost"] * data["base_license_count"], with_ruble=True))
+        data["base_license_cost"] * data["base_license_count"],
+        with_ruble=True))
 
     fill_cell(2, 2, format_cost(data["hr_license_cost"], with_ruble=True))
     fill_cell(2, 3, format_count(data["hr_license_count"]))
     fill_cell(2, 5, format_cost(
         data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
 
-    fill_cell(3, 2, format_cost(data["employee_license_cost"], with_ruble=True))
+    fill_cell(3, 2, format_cost(data["employee_license_cost"],
+                                with_ruble=True))
     fill_cell(3, 3, format_count(data["employee_license_count"]))
     fill_cell(3, 5, format_cost(
-        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
+        data["employee_license_cost"] * data["employee_license_count"],
+        with_ruble=True))
 
     rows = len(table.rows)
     if rows > 4:
@@ -99,27 +102,34 @@ def fill_complex_template(doc, data):
                     run.bold = bold
                     run.font.name = 'Montserrat'
 
-        fill_cell(1, 2, format_cost(data["base_license_cost"], with_ruble=True))
+        fill_cell(1, 2, format_cost(data["base_license_cost"],
+                                    with_ruble=True))
         fill_cell(1, 3, format_count(data["base_license_count"]))
-        fill_cell(1, 5, format_cost(data["base_license_cost"] * data["base_license_count"], with_ruble=True))
+        fill_cell(1, 5, format_cost(data["base_license_cost"] * data[
+            "base_license_count"], with_ruble=True))
 
         fill_cell(2, 2, format_cost(data["hr_license_cost"], with_ruble=True))
         fill_cell(2, 3, format_count(data["hr_license_count"]))
-        fill_cell(2, 5, format_cost(data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
+        fill_cell(2, 5, format_cost(data["hr_license_cost"] * data[
+            "hr_license_count"], with_ruble=True))
 
-        fill_cell(3, 2, format_cost(data["employee_license_cost"], with_ruble=True))
+        fill_cell(3, 2, format_cost(data["employee_license_cost"],
+                                    with_ruble=True))
         fill_cell(3, 3, format_count(data["employee_license_count"]))
-        fill_cell(3, 5, format_cost(data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
+        fill_cell(3, 5, format_cost(data["employee_license_cost"] * data[
+            "employee_license_count"], with_ruble=True))
 
         if data.get("need_onprem"):
             fill_cell(4, 2, format_cost(data["onprem_cost"], with_ruble=True))
             fill_cell(4, 3, format_count(data["onprem_count"]))
             fill_cell(4, 4, "12")
-            fill_cell(4, 5, format_cost(data["onprem_cost"] * data["onprem_count"], with_ruble=True))
+            fill_cell(4, 5, format_cost(data["onprem_cost"] * data[
+                "onprem_count"], with_ruble=True))
 
         total = (data["base_license_cost"] * data["base_license_count"] +
                  data["hr_license_cost"] * data["hr_license_count"] +
-                 data["employee_license_cost"] * data["employee_license_count"])
+                 data["employee_license_cost"] * data[
+                     "employee_license_count"])
         if data.get("need_onprem"):
             total += data["onprem_cost"] * data["onprem_count"]
 
@@ -156,7 +166,8 @@ def fill_marketing_template(doc, data):
 
     def fill_cell(row, col, text, bold=False):
         if row >= rows_count or col >= cols_count:
-            print(f"[!] Нет ячейки ({row}, {col}) в таблице {rows_count}x{cols_count}")
+            print(f"[!] Нет ячейки ({row}, {col}) в таблице {rows_count}x{
+                cols_count}")
             return
         cell = table.cell(row, col)
         cell.text = text
@@ -170,19 +181,23 @@ def fill_marketing_template(doc, data):
     fill_cell(1, 2, format_count(data["base_license_count"]))
     fill_cell(1, 3, "12 мес.")
     fill_cell(1, 4, format_cost(
-        data["base_license_cost"] * data["base_license_count"], with_ruble=True))
+        data["base_license_cost"] * data["base_license_count"],
+        with_ruble=True))
 
     fill_cell(2, 1, format_cost(data["hr_license_cost"], with_ruble=True))
     fill_cell(2, 2, format_count(data["hr_license_count"]))
     fill_cell(2, 3, "12 мес.")
     fill_cell(2, 4, format_cost(
-        data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
+        data["hr_license_cost"] * data["hr_license_count"],
+        with_ruble=True))
 
-    fill_cell(3, 1, format_cost(data["employee_license_cost"], with_ruble=True))
+    fill_cell(3, 1, format_cost(data["employee_license_cost"],
+                                with_ruble=True))
     fill_cell(3, 2, format_count(data["employee_license_count"]))
     fill_cell(3, 3, "12 мес.")
     fill_cell(3, 4, format_cost(
-        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
+        data["employee_license_cost"] * data["employee_license_count"],
+        with_ruble=True))
 
     total = (
         data["base_license_cost"] * data["base_license_count"] +
@@ -208,7 +223,8 @@ def insert_footer_expiration(doc, date_text):
     for section in doc.sections:
         footer = section.footer
         paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-        paragraph.text = f"Коммерческое предложение действительно до {date_text} г."
+        paragraph.text = f"Коммерческое предложение действительно до {
+            date_text} г."
         run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
         run.font.size = Pt(10)
         run.font.name = 'Montserrat'

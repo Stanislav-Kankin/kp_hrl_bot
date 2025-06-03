@@ -13,7 +13,7 @@ from .templates import (
     )
 import uuid
 from datetime import datetime
-from io import BytesIO
+
 from docx import Document
 import re
 import os
@@ -158,7 +158,8 @@ async def process_company_name(message: types.Message, state: FSMContext):
 
 
 @router.message(FormMarketing.company_name)
-async def process_marketing_company_name(message: types.Message, state: FSMContext):
+async def process_marketing_company_name(message: types.Message,
+                                         state: FSMContext):
     await state.update_data(company_name=message.text)
     await state.set_state(FormMarketing.is_standard_pricing)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -208,7 +209,7 @@ async def process_base_license_cost_complex(message: types.Message,
 
 @router.message(FormMarketing.base_license_cost)
 async def process_base_license_cost_marketing(message: types.Message,
-                                             state: FSMContext):
+                                              state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(base_license_cost=value)
@@ -272,7 +273,7 @@ async def process_base_license_count_complex(message: types.Message,
 
 @router.message(FormMarketing.base_license_count)
 async def process_base_license_count_marketing(message: types.Message,
-                                              state: FSMContext):
+                                               state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(base_license_count=value)
@@ -328,7 +329,7 @@ async def process_hr_license_cost_complex(message: types.Message,
 
 @router.message(FormMarketing.hr_license_cost)
 async def process_hr_license_cost_marketing(message: types.Message,
-                                           state: FSMContext):
+                                            state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_cost=value)
@@ -376,7 +377,7 @@ async def process_hr_license_count_complex(message: types.Message,
 
 @router.message(FormMarketing.hr_license_count)
 async def process_hr_license_count_marketing(message: types.Message,
-                                            state: FSMContext):
+                                             state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
@@ -424,7 +425,7 @@ async def process_employee_license_cost_complex(message: types.Message,
 
 @router.message(FormMarketing.employee_license_cost)
 async def process_employee_license_cost_marketing(message: types.Message,
-                                                 state: FSMContext):
+                                                  state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_cost=value)
@@ -460,7 +461,7 @@ async def process_employee_license_count_standard(message: types.Message,
 
 @router.message(FormMarketing.employee_license_count)
 async def process_employee_license_count_marketing(message: types.Message,
-                                                  state: FSMContext):
+                                                   state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
@@ -485,7 +486,8 @@ async def process_employee_license_count_complex(message: types.Message,
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
         await state.set_state(FormComplex.kp_expiration)
-        await message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+        await message.answer(
+            "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
@@ -500,7 +502,8 @@ async def process_onprem_choice(callback: types.CallbackQuery,
     if choice == "yes":
         await state.update_data(need_onprem=True)
         await state.set_state(FormStandard.onprem_cost)
-        await callback.message.answer("Введите <b>сумму on-prem</b> (руб/год):")
+        await callback.message.answer(
+            "Введите <b>сумму on-prem</b> (руб/год):")
     else:
         await state.update_data(
             need_onprem=False,
@@ -516,13 +519,15 @@ async def process_onprem_choice(callback: types.CallbackQuery,
         elif "FormComplex" in str(current_state):
             await state.set_state(FormComplex.kp_expiration)
 
-        await callback.message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+        await callback.message.answer(
+            "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
 
     await callback.answer()
 
 
 @router.message(FormStandard.onprem_cost)
-async def process_onprem_cost_standard(message: types.Message, state: FSMContext):
+async def process_onprem_cost_standard(message: types.Message,
+                                       state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_cost=value)
@@ -534,7 +539,8 @@ async def process_onprem_cost_standard(message: types.Message, state: FSMContext
 
 
 @router.message(FormMarketing.onprem_cost)
-async def process_onprem_cost_marketing(message: types.Message, state: FSMContext):
+async def process_onprem_cost_marketing(message: types.Message,
+                                        state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_cost=value)
@@ -546,24 +552,28 @@ async def process_onprem_cost_marketing(message: types.Message, state: FSMContex
 
 
 @router.message(FormStandard.onprem_count)
-async def process_onprem_count_standard(message: types.Message, state: FSMContext):
+async def process_onprem_count_standard(message: types.Message,
+                                        state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_count=value)
         await state.set_state(FormStandard.kp_expiration)
-        await message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+        await message.answer(
+            "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
 
 @router.message(FormMarketing.onprem_count)
-async def process_onprem_count_marketing(message: types.Message, state: FSMContext):
+async def process_onprem_count_marketing(message: types.Message,
+                                         state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_count=value)
         await state.set_state(FormMarketing.kp_expiration)
-        await message.answer("Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+        await message.answer(
+            "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
@@ -580,13 +590,15 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
             data["hr_license_cost"] = 15000
 
     if template_choice == "standard":
-        doc = load_template("template.docx", need_onprem=data.get("need_onprem", True))
+        doc = load_template(
+            "template.docx", need_onprem=data.get("need_onprem", True))
         fill_standard_template(doc, data)
     elif template_choice == "complex":
         doc = load_template("template_complex.docx")
         fill_complex_template(doc, data)
     elif template_choice == "marketing":
-        doc = Document(f"templates/{'template_.docx' if data.get('need_onprem', False) else 'template_m_no.docx'}")
+        doc = Document(f"templates/{'template_.docx' if data.get(
+            'need_onprem', False) else 'template_m_no.docx'}")
 
         fill_marketing_template(doc, data)
 
@@ -668,7 +680,10 @@ async def process_kp_expiration(message: types.Message, state: FSMContext):
     date_text = message.text.strip()
 
     if not re.match(r"^\d{2}\.\d{2}\.\d{4}$", date_text):
-        await message.answer("⛔️ Пожалуйста, введите дату в формате <b>дд.мм.гггг</b>, например: 30.06.2025")
+        await message.answer(
+            "⛔️ Пожалуйста, введите дату в "
+            "формате <b>дд.мм.гггг</b>, например: 30.06.2025"
+            )
         return
 
     await state.update_data(kp_expiration=date_text)
