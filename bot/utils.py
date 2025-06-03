@@ -55,7 +55,7 @@ def set_montserrat_font(doc):
                     run.font.size = Pt(10)
 
 
-def convert_docx_to_pdf(docx_path: str) -> str | None:
+def convert_to_pdf_libreoffice(docx_path: str) -> str | None:
     if not shutil.which("libreoffice") and not shutil.which("soffice"):
         raise RuntimeError("LibreOffice (libreoffice или soffice) не найдена в системе.")
 
