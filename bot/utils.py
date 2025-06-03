@@ -54,10 +54,9 @@ def set_montserrat_font(doc):
 
 
 def convert_to_pdf_libreoffice(input_path: str) -> str:
-    """Конвертирует .docx в .pdf с помощью LibreOffice CLI"""
     output_dir = os.path.dirname(input_path)
     result = subprocess.run(
-        ["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
+        ["/usr/bin/libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
