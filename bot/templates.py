@@ -141,7 +141,7 @@ def fill_marketing_template(doc, data):
                         paragraph.clear()
                         run = paragraph.add_run(f"HRlink для {company_name}")
                         run.bold = True
-                        run.font.size = Pt(18)
+                        run.font.size = Pt(15)
                         run.font.name = 'Montserrat'
                         run.font.color.rgb = RGBColor(255, 255, 255)
                         break
