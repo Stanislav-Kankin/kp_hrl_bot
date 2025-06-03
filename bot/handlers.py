@@ -16,6 +16,7 @@ from datetime import datetime
 from io import BytesIO
 from docx import Document
 import re
+import os
 
 router = Router()
 
@@ -617,7 +618,6 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
         reply_markup=keyboard)
 
     await state.clear()
-
 
 
 @router.callback_query(lambda c: c.data.startswith("convert_to_pdf_"))
