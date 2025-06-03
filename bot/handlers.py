@@ -643,10 +643,12 @@ async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
 
     try:
         pdf_path = convert_to_pdf_libreoffice(docx_path)
+        base_name = os.path.splitext(os.path.basename(docx_path))[0]
+        filename = f"{base_name}.pdf"
 
         with open(pdf_path, "rb") as f:
             await callback.message.answer_document(
-                types.BufferedInputFile(f.read(), filename=os.path.basename(pdf_path)),
+                types.BufferedInputFile(f.read(), filename=filename),
                 caption="Ваше КП в формате PDF."
             )
     except Exception as e:
