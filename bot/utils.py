@@ -3,6 +3,7 @@ from collections import OrderedDict
 from docx.shared import Pt
 
 import subprocess
+import shutil
 
 
 file_id_mapping = OrderedDict()
@@ -54,15 +55,27 @@ def set_montserrat_font(doc):
 
 
 def convert_to_pdf_libreoffice(input_path: str) -> str:
+    """Конвертирует DOCX → PDF с помощью LibreOffice CLI"""
     output_dir = os.path.dirname(input_path)
+
+    soffice_path = shutil.which("libreoffice") or shutil.which("soffice")
+    if not soffice_path:
+        raise RuntimeError("LibreOffice (libreoffice или soffice) не найдена в системе.")
+
     result = subprocess.run(
-        ["/usr/bin/libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
+        [soffice_path, "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
 
     if result.returncode != 0:
-        raise RuntimeError(f"Ошибка конвертации LibreOffice: {result.stderr.decode()}")
+        raise RuntimeError(
+            f"Ошибка конвертации LibreOffice:\n"
+            f"{result.stderr.decode(errors='ignore') or result.stdout.decode(errors='ignore')}"
+        )
 
     pdf_path = os.path.splitext(input_path)[0] + ".pdf"
+    if not os.path.exists(pdf_path):
+        raise RuntimeError("PDF файл не создан, вероятно LibreOffice не поддерживает формат.")
+
     return pdf_path
