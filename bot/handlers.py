@@ -622,6 +622,7 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
 
 @router.callback_query(lambda c: c.data.startswith("convert_to_pdf_"))
 async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
+
     unique_id = callback.data.split("_")[3]
     file_id = file_id_mapping.get(unique_id)
 
@@ -635,6 +636,8 @@ async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
 
     file = await bot.download_file(file_path)
     docx_path = f"temp_{unique_id}.docx"
+    pdf_path = None
+
     with open(docx_path, "wb") as f:
         f.write(file.read())
 
@@ -649,9 +652,8 @@ async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
     except Exception as e:
         await callback.message.answer(f"Ошибка при конвертации: {e}")
     finally:
-        # Удалим временные файлы
         for path in (docx_path, pdf_path):
-            if os.path.exists(path):
+            if path and os.path.exists(path):
                 os.remove(path)
 
     await callback.answer()
