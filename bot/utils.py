@@ -58,14 +58,21 @@ def convert_to_pdf_libreoffice(input_path: str) -> str:
     """Конвертирует DOCX → PDF с помощью LibreOffice CLI"""
     output_dir = os.path.dirname(input_path)
 
+    # Ищем путь к soffice/libreoffice
     soffice_path = shutil.which("libreoffice") or shutil.which("soffice")
-    if not soffice_path:
+    if not soffice_path or not os.path.exists(soffice_path):
         raise RuntimeError("LibreOffice (libreoffice или soffice) не найдена в системе.")
 
+    # Подготавливаем окружение с безопасным PATH
+    env = os.environ.copy()
+    env["PATH"] += ":/usr/bin:/usr/local/bin"
+
+    # Запускаем LibreOffice CLI
     result = subprocess.run(
         [soffice_path, "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
+        env=env
     )
 
     if result.returncode != 0:
@@ -76,6 +83,7 @@ def convert_to_pdf_libreoffice(input_path: str) -> str:
 
     pdf_path = os.path.splitext(input_path)[0] + ".pdf"
     if not os.path.exists(pdf_path):
-        raise RuntimeError("PDF файл не создан, вероятно LibreOffice не поддерживает формат.")
+        raise RuntimeError("PDF файл не создан — возможно, формат исходника не поддерживается.")
 
     return pdf_path
+
