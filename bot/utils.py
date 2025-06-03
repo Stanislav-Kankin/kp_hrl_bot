@@ -1,8 +1,8 @@
 import os
-
 from collections import OrderedDict
-
 from docx.shared import Pt
+
+import subprocess
 
 
 file_id_mapping = OrderedDict()
@@ -51,3 +51,19 @@ def set_montserrat_font(doc):
                         ] if paragraph.runs else paragraph.add_run()
                     run.font.name = 'Montserrat'
                     run.font.size = Pt(10)
+
+
+def convert_to_pdf_libreoffice(input_path: str) -> str:
+    """Конвертирует .docx в .pdf с помощью LibreOffice CLI"""
+    output_dir = os.path.dirname(input_path)
+    result = subprocess.run(
+        ["libreoffice", "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Ошибка конвертации LibreOffice: {result.stderr.decode()}")
+
+    pdf_path = os.path.splitext(input_path)[0] + ".pdf"
+    return pdf_path

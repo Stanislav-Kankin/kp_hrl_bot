@@ -3,7 +3,10 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from bot.states import FormStandard, FormComplex, FormMarketing
-from .utils import clean_input, cleanup_kp_files, file_id_mapping
+from .utils import (
+    clean_input, cleanup_kp_files, file_id_mapping,
+    convert_to_pdf_libreoffice
+    )
 from .templates import (
     load_template, fill_standard_template, fill_complex_template,
     fill_marketing_template
@@ -616,6 +619,7 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     await state.clear()
 
 
+
 @router.callback_query(lambda c: c.data.startswith("convert_to_pdf_"))
 async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
     unique_id = callback.data.split("_")[3]
@@ -630,18 +634,25 @@ async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
     file_path = file_info.file_path
 
     file = await bot.download_file(file_path)
-    doc_bytes = BytesIO(file.read())
+    docx_path = f"temp_{unique_id}.docx"
+    with open(docx_path, "wb") as f:
+        f.write(file.read())
 
-    pdf_bytes = BytesIO()
-    doc = Document(doc_bytes)
-    doc.save(pdf_bytes)
-    pdf_bytes.seek(0)
+    try:
+        pdf_path = convert_to_pdf_libreoffice(docx_path)
 
-    pdf_filename = f"КП_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    await callback.message.answer_document(
-        types.BufferedInputFile(pdf_bytes.read(), filename=pdf_filename),
-        caption="Ваше КП в формате PDF."
-    )
+        with open(pdf_path, "rb") as f:
+            await callback.message.answer_document(
+                types.BufferedInputFile(f.read(), filename=os.path.basename(pdf_path)),
+                caption="Ваше КП в формате PDF."
+            )
+    except Exception as e:
+        await callback.message.answer(f"Ошибка при конвертации: {e}")
+    finally:
+        # Удалим временные файлы
+        for path in (docx_path, pdf_path):
+            if os.path.exists(path):
+                os.remove(path)
 
     await callback.answer()
 
