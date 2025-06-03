@@ -4,6 +4,7 @@ from docx.shared import Pt
 
 import subprocess
 import shutil
+import tempfile
 
 
 file_id_mapping = OrderedDict()
@@ -54,32 +55,30 @@ def set_montserrat_font(doc):
                     run.font.size = Pt(10)
 
 
-def convert_to_pdf_libreoffice(input_path: str) -> str:
-    """Конвертирует DOCX → PDF с помощью LibreOffice CLI"""
-    output_dir = os.path.dirname(input_path)
-
-    soffice_path = shutil.which("libreoffice") or shutil.which("soffice")
-    if not soffice_path:
+def convert_docx_to_pdf(docx_path: str) -> str | None:
+    if not shutil.which("libreoffice") and not shutil.which("soffice"):
         raise RuntimeError("LibreOffice (libreoffice или soffice) не найдена в системе.")
 
-    env = os.environ.copy()
-    env["PATH"] += ":/usr/bin:/usr/local/bin"
+    if not os.path.exists(docx_path):
+        raise FileNotFoundError(f"Файл не найден: {docx_path}")
 
-    result = subprocess.run(
-        [soffice_path, "--headless", "--convert-to", "pdf", input_path, "--outdir", output_dir],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env
-    )
+    output_dir = tempfile.mkdtemp()
 
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"Ошибка конвертации LibreOffice:\n"
-            f"{result.stderr.decode(errors='ignore') or result.stdout.decode(errors='ignore')}"
+    try:
+        subprocess.run(
+            ["xvfb-run", "libreoffice", "--headless", "--convert-to", "pdf", docx_path, "--outdir", output_dir],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Ошибка конвертации LibreOffice:\n{e.stderr.decode()}")
 
-    pdf_path = os.path.splitext(input_path)[0] + ".pdf"
+    base_name = os.path.splitext(os.path.basename(docx_path))[0]
+    pdf_path = os.path.join(output_dir, f"{base_name}.pdf")
+
+    # Убедимся, что PDF был создан
     if not os.path.exists(pdf_path):
-        raise RuntimeError("PDF файл не создан — возможно, формат исходника не поддерживается.")
+        raise RuntimeError("Файл PDF не найден после конвертации.")
 
     return pdf_path
