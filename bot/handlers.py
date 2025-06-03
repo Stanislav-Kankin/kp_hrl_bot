@@ -24,8 +24,8 @@ router = Router()
 @router.message(Command("start"))
 async def start(message: types.Message):
     await message.answer(
-        "Это бот для создания <b>КП</b>.\n"
-        "Нажмите /kp для начала.\n"
+        "Это бот для создания <b>КП</b>.\n\n"
+        "<b>Нажмите /kp для начала.</b>\n"
         "Выбери актуальный шаблон КП.\n"
         "После его формирование можно будет выгрузить его в формате PDF.",
         )
