@@ -470,13 +470,12 @@ async def process_employee_license_count_marketing(message: types.Message,
             [InlineKeyboardButton(text="Да", callback_data="onprem_yes")],
             [InlineKeyboardButton(text="Нет", callback_data="onprem_no")]
         ])
-        await message.answer(
-            "Нужен ли on-prem?", reply_markup=keyboard)
+        await message.answer("Нужен ли on-prem?", reply_markup=keyboard)
         await state.set_state(FormMarketing.need_onprem)
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
+        )
 
 
 @router.message(FormComplex.employee_license_count)
@@ -501,26 +500,31 @@ async def process_onprem_choice(callback: types.CallbackQuery,
 
     if choice == "yes":
         await state.update_data(need_onprem=True)
-        await state.set_state(FormStandard.onprem_cost)
+        if "FormStandard" in str(current_state):
+            await state.set_state(FormStandard.onprem_cost)
+        elif "FormMarketing" in str(current_state):
+            await state.set_state(FormMarketing.onprem_cost)
         await callback.message.answer(
-            "Введите <b>сумму on-prem</b> (руб/год):")
+            "Введите <b>сумму on-prem</b> (руб/год):"
+            )
     else:
         await state.update_data(
             need_onprem=False,
             onprem_cost=0,
-            onprem_count=0
-        )
+            onprem_count=0)
 
-        # ⬇️ Вместо генерации — спросим дату
-        if "FormStandard" in str(current_state):
-            await state.set_state(FormStandard.kp_expiration)
-        elif "FormMarketing" in str(current_state):
-            await state.set_state(FormMarketing.kp_expiration)
-        elif "FormComplex" in str(current_state):
-            await state.set_state(FormComplex.kp_expiration)
-
-        await callback.message.answer(
-            "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+        if "FormMarketing" in str(current_state):
+            await state.set_state(FormMarketing.unep_count)
+            await callback.message.answer(
+                "Укажите <b>количество УНЭП</b> для клиента:"
+                )
+        else:
+            if "FormStandard" in str(current_state):
+                await state.set_state(FormStandard.kp_expiration)
+            elif "FormComplex" in str(current_state):
+                await state.set_state(FormComplex.kp_expiration)
+            await callback.message.answer(
+                "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
 
     await callback.answer()
 
@@ -571,12 +575,101 @@ async def process_onprem_count_marketing(message: types.Message,
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_count=value)
-        await state.set_state(FormMarketing.kp_expiration)
-        await message.answer(
-            "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+        await state.set_state(FormMarketing.unep_count)
+        await message.answer("Укажите <b>количество УНЭП</b> для клиента:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
+
+
+@router.message(FormMarketing.unep_count)
+async def process_unep_count(message: types.Message, state: FSMContext):
+    try:
+        value = clean_input(message.text)
+        await state.update_data(unep_count=value)
+        await state.set_state(FormMarketing.sms_count)
+        await message.answer("Укажите <b>количество СМС</b> для клиента:")
+    except ValueError as e:
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+        )
+
+
+@router.message(FormMarketing.sms_count)
+async def process_sms_count(message: types.Message, state: FSMContext):
+    try:
+        value = clean_input(message.text)
+        await state.update_data(sms_count=value)
+        await state.set_state(FormMarketing.custom_conditions)
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(
+                text="Добавить условие",
+                callback_data="add_condition"
+                )],
+            [InlineKeyboardButton(
+                text="Пропустить",
+                callback_data="skip_conditions"
+                )]
+        ])
+        await message.answer(
+            "Хотите добавить индивидуальные условия?",
+            reply_markup=keyboard
+        )
+    except ValueError as e:
+        await message.answer(
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
+        )
+
+
+@router.callback_query(
+        lambda c: c.data == "add_condition", FormMarketing.custom_conditions)
+async def start_adding_conditions(callback: types.CallbackQuery,
+                                  state: FSMContext):
+    await callback.message.answer(
+        "Введите индивидуальное условие для клиента:")
+    await state.set_state(FormMarketing.current_condition)
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data == "skip_conditions",
+                       FormMarketing.custom_conditions)
+async def skip_conditions(callback: types.CallbackQuery, state: FSMContext):
+    await state.update_data(custom_conditions=[])
+    await state.set_state(FormMarketing.kp_expiration)
+    await callback.message.answer(
+        "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+    await callback.answer()
+
+
+@router.message(FormMarketing.current_condition)
+async def process_custom_condition(message: types.Message, state: FSMContext):
+    condition = message.text.strip()
+    data = await state.get_data()
+    conditions = data.get("custom_conditions", [])
+    conditions.append(condition)
+    await state.update_data(custom_conditions=conditions)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="✅ Еще условие",
+            callback_data="add_condition"
+            )],
+        [InlineKeyboardButton(text="❌ Стоп", callback_data="stop_conditions")]
+    ])
+    await message.answer(
+        f"Добавлено условие: {condition}", reply_markup=keyboard)
+    await state.set_state(FormMarketing.custom_conditions)
+
+
+@router.callback_query(
+        lambda c: c.data == "stop_conditions", FormMarketing.custom_conditions)
+async def stop_adding_conditions(callback: types.CallbackQuery,
+                                 state: FSMContext):
+    await state.set_state(FormMarketing.kp_expiration)
+    await callback.message.answer(
+        "Введите <b>срок действия КП</b> в формате дд.мм.гггг:")
+    await callback.answer()
 
 
 async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
@@ -634,7 +727,6 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
 
 @router.callback_query(lambda c: c.data.startswith("convert_to_pdf_"))
 async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
-
     unique_id = callback.data.split("_")[3]
     file_id = file_id_mapping.get(unique_id)
 

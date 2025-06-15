@@ -40,3 +40,8 @@ class FormMarketing(StatesGroup):
     onprem_cost = State()
     onprem_count = State()
     kp_expiration = State()
+    unep_count = State()
+    sms_count = State()
+    custom_conditions = State()
+    current_condition = State()
+    kp_expiration = State()
