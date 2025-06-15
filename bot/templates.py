@@ -14,12 +14,13 @@ def fill_standard_template(doc, data):
     table = doc.tables[0]
     set_montserrat_font(doc)
 
-    employee_count_cell = table.cell(1, 0)
-    employee_count_cell.text = format_count(data["employee_license_count"])
-    for paragraph in employee_count_cell.paragraphs:
-        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in paragraph.runs:
-            run.bold = True
+    # Устанавливаем оптимальные ширины столбцов
+    table.columns[0].width = Pt(90)  # Количество сотрудников
+    table.columns[1].width = Pt(180)  # Тип лицензии
+    table.columns[2].width = Pt(100)  # Стоимость
+    table.columns[3].width = Pt(80)   # Кол-во
+    table.columns[4].width = Pt(80)   # Срок
+    table.columns[5].width = Pt(100)  # Итого
 
     def fill_cell(row, col, text, bold=False):
         cell = table.cell(row, col)
@@ -29,45 +30,66 @@ def fill_standard_template(doc, data):
             for run in paragraph.runs:
                 run.bold = bold
                 run.font.name = 'Montserrat'
-                run.font.size = Pt(10)
+                run.font.size = Pt(9)  # Уменьшаем размер шрифта
 
+    # Заполняем данные
+    employee_count = format_count(data["employee_license_count"])
+    fill_cell(1, 0, employee_count, bold=True)
+
+    # Базовая лицензия
+    fill_cell(1, 1, "Базовая лицензия")
     fill_cell(1, 2, format_cost(data["base_license_cost"], with_ruble=True))
     fill_cell(1, 3, format_count(data["base_license_count"]))
+    fill_cell(1, 4, "12")
     fill_cell(1, 5, format_cost(
         data["base_license_cost"] * data["base_license_count"],
         with_ruble=True))
 
+    # Лицензия кадровика
+    fill_cell(2, 1, "Лицензия кадровика")
     fill_cell(2, 2, format_cost(data["hr_license_cost"], with_ruble=True))
     fill_cell(2, 3, format_count(data["hr_license_count"]))
+    fill_cell(2, 4, "12")
     fill_cell(2, 5, format_cost(
-        data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
+        data["hr_license_cost"] * data["hr_license_count"],
+        with_ruble=True))
 
+    # Лицензия сотрудника
+    fill_cell(3, 1, "Лицензия Сотрудника")
     fill_cell(3, 2, format_cost(data["employee_license_cost"],
                                 with_ruble=True))
-    fill_cell(3, 3, format_count(data["employee_license_count"]))
+    fill_cell(3, 3, employee_count)
+    fill_cell(3, 4, "12")
     fill_cell(3, 5, format_cost(
         data["employee_license_cost"] * data["employee_license_count"],
         with_ruble=True))
 
-    rows = len(table.rows)
-    if rows > 4:
-        if data["need_onprem"]:
-            fill_cell(4, 2, format_cost(data["onprem_cost"], with_ruble=True))
-            fill_cell(4, 3, format_count(data["onprem_count"]))
-            fill_cell(4, 4, "12")
-            fill_cell(4, 5, format_cost(
-                data["onprem_cost"] * data["onprem_count"], with_ruble=True))
+    # On-prem (если нужно)
+    if data.get("need_onprem", False):
+        fill_cell(4, 1, "On-prem размещение")
+        fill_cell(4, 2, format_cost(data["onprem_cost"], with_ruble=True))
+        fill_cell(4, 3, format_count(data["onprem_count"]))
+        fill_cell(4, 4, "12")
+        fill_cell(4, 5, format_cost(
+            data["onprem_cost"] * data["onprem_count"], with_ruble=True))
 
-    total = (data["base_license_cost"] * data["base_license_count"] +
-             data["hr_license_cost"] * data["hr_license_count"] +
-             data["employee_license_cost"] * data["employee_license_count"])
-    if data["need_onprem"]:
+    # Итоговая сумма
+    total = (
+        data["base_license_cost"] * data["base_license_count"] +
+        data["hr_license_cost"] * data["hr_license_count"] +
+        data["employee_license_cost"] * data["employee_license_count"]
+    )
+    if data.get("need_onprem", False):
         total += data["onprem_cost"] * data["onprem_count"]
 
-    if rows > 5:
-        fill_cell(5, 5, format_cost(total, with_ruble=True), bold=True)
-    elif rows > 4:
-        fill_cell(4, 5, format_cost(total, with_ruble=True), bold=True)
+    total_row = 5 if data.get("need_onprem", False) else 4
+    fill_cell(total_row, 5, format_cost(total, with_ruble=True), bold=True)
+
+    # Объединяем ячейки в первом столбце
+    if data.get("need_onprem", False):
+        table.cell(1, 0).merge(table.cell(4, 0))
+    else:
+        table.cell(1, 0).merge(table.cell(3, 0))
 
     insert_footer_expiration(doc, data.get("kp_expiration", ""))
 
