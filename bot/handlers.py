@@ -251,7 +251,10 @@ async def process_onprem_choice(callback: types.CallbackQuery,
     current_state = await state.get_state()
 
     if choice == "yes":
-        await state.update_data(need_onprem=True)
+        await state.update_data(
+            need_onprem=True,
+            onprem_count=1  # Устанавливаем 1 лицензию по умолчанию
+        )
         if "FormStandard" in str(current_state):
             await state.set_state(FormStandard.onprem_cost)
         elif "FormMarketing" in str(current_state):
@@ -263,7 +266,8 @@ async def process_onprem_choice(callback: types.CallbackQuery,
         await state.update_data(
             need_onprem=False,
             onprem_cost=0,
-            onprem_count=0)
+            onprem_count=0
+        )
 
         if "FormMarketing" in str(current_state):
             await state.set_state(FormMarketing.unep_count)
@@ -300,8 +304,8 @@ async def process_onprem_cost_marketing(message: types.Message,
     try:
         value = clean_input(message.text)
         await state.update_data(onprem_cost=value)
-        await state.set_state(FormMarketing.onprem_count)
-        await message.answer("Введите <b>количество лицензий on-prem</b>:")
+        await state.set_state(FormMarketing.unep_count)
+        await message.answer("Укажите <b>количество УНЭП</b> для клиента:")
     except ValueError as e:
         await message.answer(
             f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
