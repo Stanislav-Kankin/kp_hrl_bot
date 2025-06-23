@@ -58,6 +58,13 @@ async def process_template_choice(callback: types.CallbackQuery,
     template_choice = callback.data.split("_")[1]
     await state.update_data(template_choice=template_choice)
 
+    # Устанавливаем стандартные значения
+    await state.update_data(
+        base_license_cost=15000,
+        base_license_count=1,
+        hr_license_cost=15000
+    )
+
     if template_choice == "complex":
         await state.set_state(FormComplex.company_name)
         await callback.message.answer("Введите <b>название компании</b>:")
@@ -65,75 +72,10 @@ async def process_template_choice(callback: types.CallbackQuery,
         await state.set_state(FormMarketing.company_name)
         await callback.message.answer("Введите <b>название компании</b>:")
     else:
-        await state.set_state(FormStandard.is_standard_pricing)
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(
-                text="Да",
-                callback_data="standard_pricing_yes")],
-            [InlineKeyboardButton(
-                text="Нет",
-                callback_data="standard_pricing_no")]
-        ])
+        await state.set_state(FormStandard.hr_license_count)
         await callback.message.answer(
-            "Стоимость Базовой лицензии и Лицензии "
-            "Кадровика стандартная? (15 000,00 руб/год)",
-            reply_markup=keyboard
-        )
-    await callback.answer()
-
-
-@router.callback_query(lambda c: c.data.startswith("standard_pricing_"))
-async def process_standard_pricing(callback: types.CallbackQuery,
-                                   state: FSMContext):
-    choice = callback.data.split("_")[2]
-    await state.update_data(is_standard_pricing=(choice == "yes"))
-
-    current_state = await state.get_state()
-    if "FormStandard" in str(current_state):
-        if choice == "yes":
-            await state.update_data(
-                base_license_cost=15000,
-                hr_license_cost=15000
+            "Введите <b>количество лицензий кадровиков</b>:"
             )
-            await state.set_state(FormStandard.base_license_count)
-            await callback.message.answer(
-                "Введите <b>количество Базовых лицензий</b>:"
-                )
-        else:
-            await state.set_state(FormStandard.base_license_cost)
-            await callback.message.answer(
-                "Введите <b>стоимость Базовой лицензии</b> (руб/год):"
-                )
-    elif "FormComplex" in str(current_state):
-        if choice == "yes":
-            await state.update_data(
-                base_license_cost=15000,
-                hr_license_cost=15000
-            )
-            await state.set_state(FormComplex.base_license_count)
-            await callback.message.answer(
-                "Введите <b>количество Базовых лицензий</b>:"
-                )
-        else:
-            await state.set_state(FormComplex.base_license_cost)
-            await callback.message.answer(
-                "Введите <b>стоимость Базовой лицензии</b> (руб/год):"
-                )
-    elif "FormMarketing" in str(current_state):
-        if choice == "yes":
-            await state.update_data(
-                base_license_cost=15000,
-                hr_license_cost=15000
-            )
-            await state.set_state(FormMarketing.base_license_count)
-            await callback.message.answer(
-                "Введите <b>количество Базовых лицензий</b>:"
-                )
-        else:
-            await state.set_state(FormMarketing.base_license_cost)
-            await callback.message.answer(
-                "Введите <b>стоимость Базовой лицензии</b> (руб/год):"
-                )
 
     await callback.answer()
 
@@ -141,206 +83,16 @@ async def process_standard_pricing(callback: types.CallbackQuery,
 @router.message(FormComplex.company_name)
 async def process_company_name(message: types.Message, state: FSMContext):
     await state.update_data(company_name=message.text)
-    await state.set_state(FormComplex.is_standard_pricing)
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="Да",
-            callback_data="standard_pricing_yes")],
-        [InlineKeyboardButton(
-            text="Нет",
-            callback_data="standard_pricing_no")]
-    ])
-    await message.answer(
-        "Стоимость Базовой лицензии и Лицензии "
-        "Кадровика стандартная? (15 000,00 руб/год)",
-        reply_markup=keyboard
-    )
+    await state.set_state(FormComplex.hr_license_count)
+    await message.answer("Введите <b>количество лицензий кадровиков</b>:")
 
 
 @router.message(FormMarketing.company_name)
 async def process_marketing_company_name(message: types.Message,
                                          state: FSMContext):
     await state.update_data(company_name=message.text)
-    await state.set_state(FormMarketing.is_standard_pricing)
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="Да",
-            callback_data="standard_pricing_yes")],
-        [InlineKeyboardButton(
-            text="Нет",
-            callback_data="standard_pricing_no")]
-    ])
-    await message.answer(
-        "Стоимость Базовой лицензии и Лицензии "
-        "Кадровика стандартная? (15 000,00 руб/год)",
-        reply_markup=keyboard
-    )
-
-
-@router.message(FormStandard.base_license_cost)
-async def process_base_license_cost_standard(message: types.Message,
-                                             state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(base_license_cost=value)
-        await state.set_state(FormStandard.base_license_count)
-        await message.answer("Введите <b>количество Базовых лицензий</b>:")
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormComplex.base_license_cost)
-async def process_base_license_cost_complex(message: types.Message,
-                                            state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(base_license_cost=value)
-        await state.set_state(FormComplex.base_license_count)
-        await message.answer(
-            "Введите <b>количество Базовых лицензий</b>:"
-            )
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormMarketing.base_license_cost)
-async def process_base_license_cost_marketing(message: types.Message,
-                                              state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(base_license_cost=value)
-        await state.set_state(FormMarketing.base_license_count)
-        await message.answer("Введите <b>количество Базовых лицензий</b>:")
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormStandard.base_license_count)
-async def process_base_license_count_standard(message: types.Message,
-                                              state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(base_license_count=value)
-
-        data = await state.get_data()
-        if data.get("is_standard_pricing", False):
-            await state.set_state(FormStandard.hr_license_count)
-            await message.answer(
-                "Введите <b>количество лицензий кадровиков</b>:"
-                )
-        else:
-            await state.set_state(FormStandard.hr_license_cost)
-            await message.answer(
-                "Введите <b>стоимость лицензий кадровиков</b> (руб/год):"
-                )
-
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormComplex.base_license_count)
-async def process_base_license_count_complex(message: types.Message,
-                                             state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(base_license_count=value)
-
-        data = await state.get_data()
-        if data.get("is_standard_pricing", False):
-            await state.set_state(FormComplex.hr_license_count)
-            await message.answer(
-                "Введите <b>количество лицензий кадровиков</b>:"
-                )
-        else:
-            await state.set_state(FormComplex.hr_license_cost)
-            await message.answer(
-                "Введите <b>стоимость лицензий кадровиков</b> (руб/год):"
-                )
-
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormMarketing.base_license_count)
-async def process_base_license_count_marketing(message: types.Message,
-                                               state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(base_license_count=value)
-
-        data = await state.get_data()
-        if data.get("is_standard_pricing", False):
-            await state.set_state(FormMarketing.hr_license_count)
-            await message.answer(
-                "Введите <b>количество лицензий кадровиков</b>:"
-                )
-        else:
-            await state.set_state(FormMarketing.hr_license_cost)
-            await message.answer(
-                "Введите <b>стоимость лицензий кадровиков</b> (руб/год):"
-                )
-
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormStandard.hr_license_cost)
-async def process_hr_license_cost_standard(message: types.Message,
-                                           state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(hr_license_cost=value)
-        await state.set_state(FormStandard.hr_license_count)
-        await message.answer(
-            "Введите <b>количество лицензий кадровиков</b>:"
-            )
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormComplex.hr_license_cost)
-async def process_hr_license_cost_complex(message: types.Message,
-                                          state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(hr_license_cost=value)
-        await state.set_state(FormComplex.hr_license_count)
-        await message.answer(
-            "Введите <b>количество лицензий кадровиков</b>:")
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
-
-
-@router.message(FormMarketing.hr_license_cost)
-async def process_hr_license_cost_marketing(message: types.Message,
-                                            state: FSMContext):
-    try:
-        value = clean_input(message.text)
-        await state.update_data(hr_license_cost=value)
-        await state.set_state(FormMarketing.hr_license_count)
-        await message.answer(
-            "Введите <b>количество лицензий кадровиков</b>:"
-            )
-    except ValueError as e:
-        await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
+    await state.set_state(FormMarketing.hr_license_count)
+    await message.answer("Введите <b>количество лицензий кадровиков</b>:")
 
 
 @router.message(FormStandard.hr_license_count)
@@ -676,11 +428,10 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     data = await state.get_data()
     template_choice = data.get("template_choice", "standard")
 
-    if data.get("is_standard_pricing", False):
-        if "base_license_cost" not in data:
-            data["base_license_cost"] = 15000
-        if "hr_license_cost" not in data:
-            data["hr_license_cost"] = 15000
+    # Устанавливаем стандартные значения, если они не были установлены
+    data.setdefault("base_license_cost", 15000)
+    data.setdefault("base_license_count", 1)
+    data.setdefault("hr_license_cost", 15000)
 
     if template_choice == "standard":
         doc = load_template(
