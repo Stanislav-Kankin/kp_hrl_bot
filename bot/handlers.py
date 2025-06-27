@@ -9,7 +9,7 @@ from .utils import (
     )
 from .templates import (
     load_template, fill_standard_template, fill_complex_template,
-    fill_marketing_template
+    fill_marketing_template, fill_396_template
     )
 import uuid
 from datetime import datetime
@@ -47,14 +47,17 @@ async def start_kp(message: types.Message, state: FSMContext):
         [InlineKeyboardButton(
             text="Шаблон Маркетинг (общий)",
             callback_data="template_marketing"
-            )]
+            )],
+        [InlineKeyboardButton(
+            text='Шаблон акция 396',
+            callback_data='template_396'
+        )]
     ])
     await message.answer("Какой шаблон КП интересует?", reply_markup=keyboard)
 
 
 @router.callback_query(lambda c: c.data.startswith("template_"))
-async def process_template_choice(callback: types.CallbackQuery,
-                                  state: FSMContext):
+async def process_template_choice(callback: types.CallbackQuery, state: FSMContext):
     template_choice = callback.data.split("_")[1]
     await state.update_data(template_choice=template_choice)
 
@@ -62,7 +65,8 @@ async def process_template_choice(callback: types.CallbackQuery,
     await state.update_data(
         base_license_cost=15000,
         base_license_count=1,
-        hr_license_cost=15000
+        hr_license_cost=15000,
+        employee_license_cost=396
     )
 
     if template_choice == "complex":
@@ -71,11 +75,14 @@ async def process_template_choice(callback: types.CallbackQuery,
     elif template_choice == "marketing":
         await state.set_state(FormMarketing.company_name)
         await callback.message.answer("Введите <b>название компании</b>:")
+    elif template_choice == "396":
+        await state.set_state(FormStandard.hr_license_count)
+        await callback.message.answer(
+            "Введите <b>количество лицензий кадровиков</b>:")
     else:
         await state.set_state(FormStandard.hr_license_count)
         await callback.message.answer(
-            "Введите <b>количество лицензий кадровиков</b>:"
-            )
+            "Введите <b>количество лицензий кадровиков</b>:")
 
     await callback.answer()
 
@@ -96,19 +103,25 @@ async def process_marketing_company_name(message: types.Message,
 
 
 @router.message(FormStandard.hr_license_count)
-async def process_hr_license_count_standard(message: types.Message,
-                                            state: FSMContext):
+async def process_hr_license_count_standard(message: types.Message, state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
-        await state.set_state(FormStandard.employee_license_cost)
-        await message.answer(
-            "Введите <b>стоимость лицензии сотрудника</b> (руб/год):"
-            )
+
+        data = await state.get_data()
+        if data.get("template_choice") == "396":
+            # Для шаблона 396 сразу запрашиваем количество сотрудников
+            await state.set_state(FormStandard.employee_license_count)
+            await message.answer(
+                "Введите <b>количество сотрудников</b>:")
+        else:
+            await state.set_state(FormStandard.employee_license_cost)
+            await message.answer(
+                "Введите <b>стоимость лицензии сотрудника</b> (руб/год):")
+
     except ValueError as e:
         await message.answer(
-            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение."
-            )
+            f"Ошибка: {str(e)}. Пожалуйста, введите корректное значение.")
 
 
 @router.message(FormComplex.hr_license_count)
@@ -198,6 +211,11 @@ async def process_employee_license_count_standard(message: types.Message,
         value = clean_input(message.text)
         await state.update_data(employee_license_count=value)
 
+        data = await state.get_data()
+        if data.get("template_choice") == "396":
+            # Для шаблона 396 устанавливаем фиксированную стоимость
+            await state.update_data(employee_license_cost=396)
+
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="Да", callback_data="onprem_yes")],
             [InlineKeyboardButton(text="Нет", callback_data="onprem_no")]
@@ -248,20 +266,15 @@ async def process_employee_license_count_complex(message: types.Message,
 async def process_onprem_choice(callback: types.CallbackQuery,
                                 state: FSMContext):
     choice = callback.data.split("_")[1]
-    current_state = await state.get_state()
+    data = await state.get_data()
 
     if choice == "yes":
+        # Устанавливаем фиксированные значения для on-prem
         await state.update_data(
             need_onprem=True,
-            onprem_count=1  # Устанавливаем 1 лицензию по умолчанию
+            onprem_cost=400000,  # Фиксированная стоимость
+            onprem_count=1       # Всегда 1 лицензия
         )
-        if "FormStandard" in str(current_state):
-            await state.set_state(FormStandard.onprem_cost)
-        elif "FormMarketing" in str(current_state):
-            await state.set_state(FormMarketing.onprem_cost)
-        await callback.message.answer(
-            "Введите <b>сумму on-prem</b> (руб/год):"
-            )
     else:
         await state.update_data(
             need_onprem=False,
@@ -269,11 +282,16 @@ async def process_onprem_choice(callback: types.CallbackQuery,
             onprem_count=0
         )
 
+    # Для шаблона 396 сразу генерируем КП
+    if data.get("template_choice") == "396":
+        await generate_kp(callback.bot, callback.message, state)
+    else:
+        # Для других шаблонов сохраняем старую логику
+        current_state = await state.get_state()
         if "FormMarketing" in str(current_state):
             await state.set_state(FormMarketing.unep_count)
             await callback.message.answer(
-                "Укажите <b>количество УНЭП</b> для клиента:"
-                )
+                "Укажите <b>количество УНЭП</b> для клиента:")
         else:
             if "FormStandard" in str(current_state):
                 await state.set_state(FormStandard.kp_expiration)
@@ -432,42 +450,50 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     data = await state.get_data()
     template_choice = data.get("template_choice", "standard")
 
-    # Устанавливаем стандартные значения, если они не были установлены
-    data.setdefault("base_license_cost", 15000)
-    data.setdefault("base_license_count", 1)
-    data.setdefault("hr_license_cost", 15000)
-
-    if template_choice == "standard":
-        doc = load_template(
-            "template.docx", need_onprem=data.get("need_onprem", True))
+    # Устанавливаем фиксированные значения для шаблона 396
+    if template_choice == "396":
+        await state.update_data(
+            base_license_cost=15000,
+            base_license_count=1,
+            hr_license_cost=15000,
+            employee_license_cost=396
+        )
+        need_onprem = data.get("need_onprem", False)
+        if need_onprem:
+            doc = load_template("template_396_onprem.docx")
+        else:
+            doc = load_template("template_396.docx")
+        fill_396_template(doc, data, is_onprem=need_onprem)
+    elif template_choice == "standard":
+        doc = load_template("template.docx", need_onprem=data.get(
+            "need_onprem", True))
         fill_standard_template(doc, data)
     elif template_choice == "complex":
         doc = load_template("template_complex.docx")
         fill_complex_template(doc, data)
     elif template_choice == "marketing":
-        doc = Document(f"templates/{'template_.docx' if data.get(
-            'need_onprem', False) else 'template_m_no.docx'}")
-
+        doc = load_template("template_marketing.docx")
         fill_marketing_template(doc, data)
 
+    # Генерируем имя файла с timestamp
     kp_filename = f"КП_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
     doc.save(kp_filename)
 
+    # Отправляем готовый документ
     with open(kp_filename, 'rb') as file:
         doc_message = await message.answer_document(
             types.BufferedInputFile(file.read(), filename=kp_filename),
-            caption="Ваше КП готово!\n"
-            "Вы можете скачать его или конвертировать в PDF."
+            caption="Ваше КП готово!\nВы можете скачать его или конвертировать в PDF."
         )
 
+    # Сохраняем file_id для возможной конвертации в PDF
     unique_id = str(uuid.uuid4())
-
     if len(file_id_mapping) >= 5:
         oldest_file_id = next(iter(file_id_mapping))
         del file_id_mapping[oldest_file_id]
-
     file_id_mapping[unique_id] = doc_message.document.file_id
 
+    # Добавляем кнопку для конвертации в PDF
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
             text="Сделать PDF",

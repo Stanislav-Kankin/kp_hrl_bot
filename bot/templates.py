@@ -298,3 +298,104 @@ def insert_footer_expiration(doc, date_text):
         run.font.name = 'Montserrat'
         run.font.bold = True
         run.font.color.rgb = RGBColor(0, 102, 204)
+
+
+def fill_396_template(doc, data, is_onprem=False):
+    set_montserrat_font(doc)
+    
+    # Константы
+    ONPREM_COST = 400000
+    EMPLOYEE_COST = 396
+    PRO_COST = 140
+    SMS_COST = 4
+    
+    # Обрабатываем обе таблицы (обычный тариф и PRO)
+    for table in doc.tables[:2]:
+        def fill_cell(row, col, text, bold=False):
+            cell = table.cell(row, col)
+            cell.text = text
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in paragraph.runs:
+                    run.bold = bold
+                    run.font.name = 'Montserrat'
+                    run.font.size = Pt(9)
+
+        employee_count = format_count(data["employee_license_count"])
+        
+        # Заполняем данные
+        fill_cell(1, 0, employee_count, bold=True)
+        
+        # Базовая лицензия
+        fill_cell(1, 1, "Базовая лицензия")
+        fill_cell(1, 2, "15 000,00 ₽")
+        fill_cell(1, 3, "1")
+        fill_cell(1, 4, "12")
+        fill_cell(1, 5, "15 000,00 ₽")
+
+        # Лицензия кадровика
+        fill_cell(2, 1, "Лицензия кадровика")
+        fill_cell(2, 2, "15 000,00 ₽")
+        fill_cell(2, 3, format_count(data["hr_license_count"]))
+        fill_cell(2, 4, "12")
+        fill_cell(2, 5, format_cost(15000 * data["hr_license_count"], with_ruble=True))
+
+        # Лицензия сотрудника
+        fill_cell(3, 1, "Лицензия Сотрудника")
+        fill_cell(3, 2, "396,00 ₽")
+        fill_cell(3, 3, employee_count)
+        fill_cell(3, 4, "12")
+        fill_cell(3, 5, format_cost(396 * data["employee_license_count"], with_ruble=True))
+
+        # Определяем строки для разных типов таблиц
+        if "PRO" in table.cell(4, 1).text:  # Это таблица PRO
+            # Лицензия PRO
+            fill_cell(4, 1, "Лицензия сотрудника PRO")
+            fill_cell(4, 2, "140,00 ₽")
+            fill_cell(4, 3, employee_count)
+            fill_cell(4, 4, "12")
+            fill_cell(4, 5, format_cost(140 * data["employee_license_count"], with_ruble=True))
+            onprem_row = 5
+        else:
+            onprem_row = 4
+
+        # On-prem (если нужен)
+        if is_onprem:
+            fill_cell(onprem_row, 1, "On-prem размещение")
+            fill_cell(onprem_row, 2, "400 000,00 ₽")
+            fill_cell(onprem_row, 3, "1")
+            fill_cell(onprem_row, 4, "12")
+            fill_cell(onprem_row, 5, "400 000,00 ₽")
+            total_row = onprem_row + 1
+        else:
+            total_row = onprem_row
+
+        # SMS (фиксированная стоимость)
+        fill_cell(total_row, 1, "SMS-сообщения*")
+        fill_cell(total_row, 2, "4,00 ₽")
+        fill_cell(total_row, 3, "1")
+        fill_cell(total_row, 4, "12")
+        fill_cell(total_row, 5, "4,00 ₽")
+
+        # Итоговая сумма (без учета SMS)
+        total = (
+            15000 * 1 +  # Базовая лицензия
+            15000 * data["hr_license_count"] +
+            396 * data["employee_license_count"]
+        )
+        
+        if "PRO" in table.cell(4, 1).text:
+            total += 140 * data["employee_license_count"]
+        
+        if is_onprem:
+            total += 400000
+
+        fill_cell(total_row + 1, 5, format_cost(total, with_ruble=True), bold=True)
+
+        # Объединяем ячейки в первом столбце
+        if "PRO" in table.cell(4, 1).text:
+            merge_to = 5 if is_onprem else 4
+        else:
+            merge_to = 4 if is_onprem else 3
+            
+        table.cell(1, 0).merge(table.cell(merge_to, 0))
