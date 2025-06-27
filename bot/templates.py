@@ -195,7 +195,9 @@ def fill_marketing_template(doc, data):
 
     def fill_cell(row, col, text, bold=False):
         if row >= rows_count or col >= cols_count:
-            print(f"[!] Нет ячейки ({row}, {col}) в таблице {rows_count}x{cols_count}")
+            print(
+                f"[!] Нет ячейки ({row}, {col}) в таблице {rows_count}x{cols_count}"
+                )
             return
         cell = table.cell(row, col)
         cell.text = str(text)
@@ -211,7 +213,8 @@ def fill_marketing_template(doc, data):
     fill_cell(1, 2, format_count(data["base_license_count"]))
     fill_cell(1, 3, "12 мес.")
     fill_cell(1, 4, format_cost(
-        data["base_license_cost"] * data["base_license_count"], with_ruble=True))
+        data["base_license_cost"] * data[
+            "base_license_count"], with_ruble=True))
 
     fill_cell(2, 1, format_cost(data["hr_license_cost"], with_ruble=True))
     fill_cell(2, 2, format_count(data["hr_license_count"]))
@@ -219,11 +222,13 @@ def fill_marketing_template(doc, data):
     fill_cell(2, 4, format_cost(
         data["hr_license_cost"] * data["hr_license_count"], with_ruble=True))
 
-    fill_cell(3, 1, format_cost(data["employee_license_cost"], with_ruble=True))
+    fill_cell(3, 1, format_cost(data[
+        "employee_license_cost"], with_ruble=True))
     fill_cell(3, 2, format_count(data["employee_license_count"]))
     fill_cell(3, 3, "12 мес.")
     fill_cell(3, 4, format_cost(
-        data["employee_license_cost"] * data["employee_license_count"], with_ruble=True))
+        data["employee_license_cost"] * data[
+            "employee_license_count"], with_ruble=True))
 
     total = (
         data["base_license_cost"] * data["base_license_count"] +
@@ -254,7 +259,9 @@ def fill_marketing_template(doc, data):
             content_run = paragraph.add_run("\n")
             content_run = paragraph.add_run(
                 f"- {data.get('unep_count', 0)} УНЭП\n"
-                f"- {data.get('sms_count', 0)} СМС (на уведомление и подписание документа)"
+                f"- {data.get(
+                    'sms_count', 0
+                    )} СМС (на уведомление и подписание документа)"
             )
             content_run.font.size = Pt(10)
             content_run.font.color.rgb = RGBColor(0, 0, 0)
@@ -302,13 +309,7 @@ def insert_footer_expiration(doc, date_text):
 
 def fill_396_template(doc, data, is_onprem=False):
     set_montserrat_font(doc)
-    
-    # Константы
-    ONPREM_COST = 400000
-    EMPLOYEE_COST = 396
-    PRO_COST = 140
-    SMS_COST = 4
-    
+
     # Обрабатываем обе таблицы (обычный тариф и PRO)
     for table in doc.tables[:2]:
         def fill_cell(row, col, text, bold=False):
@@ -319,13 +320,13 @@ def fill_396_template(doc, data, is_onprem=False):
                 for run in paragraph.runs:
                     run.bold = bold
                     run.font.name = 'Montserrat'
-                    run.font.size = Pt(9)
+                    run.font.size = Pt(10)
 
         employee_count = format_count(data["employee_license_count"])
-        
+
         # Заполняем данные
         fill_cell(1, 0, employee_count, bold=True)
-        
+
         # Базовая лицензия
         fill_cell(1, 1, "Базовая лицензия")
         fill_cell(1, 2, "15 000,00 ₽")
@@ -338,14 +339,16 @@ def fill_396_template(doc, data, is_onprem=False):
         fill_cell(2, 2, "15 000,00 ₽")
         fill_cell(2, 3, format_count(data["hr_license_count"]))
         fill_cell(2, 4, "12")
-        fill_cell(2, 5, format_cost(15000 * data["hr_license_count"], with_ruble=True))
+        fill_cell(2, 5, format_cost(15000 * data[
+            "hr_license_count"], with_ruble=True))
 
         # Лицензия сотрудника
         fill_cell(3, 1, "Лицензия Сотрудника")
         fill_cell(3, 2, "396,00 ₽")
         fill_cell(3, 3, employee_count)
         fill_cell(3, 4, "12")
-        fill_cell(3, 5, format_cost(396 * data["employee_license_count"], with_ruble=True))
+        fill_cell(3, 5, format_cost(396 * data[
+            "employee_license_count"], with_ruble=True))
 
         # Определяем строки для разных типов таблиц
         if "PRO" in table.cell(4, 1).text:  # Это таблица PRO
@@ -354,7 +357,8 @@ def fill_396_template(doc, data, is_onprem=False):
             fill_cell(4, 2, "140,00 ₽")
             fill_cell(4, 3, employee_count)
             fill_cell(4, 4, "12")
-            fill_cell(4, 5, format_cost(140 * data["employee_license_count"], with_ruble=True))
+            fill_cell(4, 5, format_cost(140 * data[
+                "employee_license_count"], with_ruble=True))
             onprem_row = 5
         else:
             onprem_row = 4
@@ -383,19 +387,20 @@ def fill_396_template(doc, data, is_onprem=False):
             15000 * data["hr_license_count"] +
             396 * data["employee_license_count"]
         )
-        
+
         if "PRO" in table.cell(4, 1).text:
             total += 140 * data["employee_license_count"]
-        
+
         if is_onprem:
             total += 400000
 
-        fill_cell(total_row + 1, 5, format_cost(total, with_ruble=True), bold=True)
+        fill_cell(total_row + 1, 5, format_cost(
+            total, with_ruble=True), bold=True)
 
         # Объединяем ячейки в первом столбце
         if "PRO" in table.cell(4, 1).text:
             merge_to = 5 if is_onprem else 4
         else:
             merge_to = 4 if is_onprem else 3
-            
+
         table.cell(1, 0).merge(table.cell(merge_to, 0))
