@@ -320,7 +320,7 @@ def fill_396_template(doc, data, is_onprem=False):
                 for run in paragraph.runs:
                     run.bold = bold
                     run.font.name = 'Montserrat'
-                    run.font.size = Pt(9)
+                    run.font.size = Pt(10)
 
         employee_count = format_count(data["employee_license_count"])
 
