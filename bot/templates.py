@@ -329,14 +329,14 @@ def fill_396_template(doc, data, is_onprem=False):
 
         # Базовая лицензия
         fill_cell(1, 1, "Базовая лицензия")
-        fill_cell(1, 2, "15 000,00 ₽")
+        fill_cell(1, 2, "15 000 ₽")
         fill_cell(1, 3, "1")
         fill_cell(1, 4, "12")
-        fill_cell(1, 5, "15 000,00 ₽")
+        fill_cell(1, 5, "15 000 ₽")
 
         # Лицензия кадровика
         fill_cell(2, 1, "Лицензия кадровика")
-        fill_cell(2, 2, "15 000,00 ₽")
+        fill_cell(2, 2, "15 000 ₽")
         fill_cell(2, 3, format_count(data["hr_license_count"]))
         fill_cell(2, 4, "12")
         fill_cell(2, 5, format_cost(15000 * data[
@@ -344,7 +344,7 @@ def fill_396_template(doc, data, is_onprem=False):
 
         # Лицензия сотрудника
         fill_cell(3, 1, "Лицензия Сотрудника")
-        fill_cell(3, 2, "396,00 ₽")
+        fill_cell(3, 2, "396 ₽")
         fill_cell(3, 3, employee_count)
         fill_cell(3, 4, "12")
         fill_cell(3, 5, format_cost(396 * data[
@@ -354,7 +354,7 @@ def fill_396_template(doc, data, is_onprem=False):
         if "PRO" in table.cell(4, 1).text:  # Это таблица PRO
             # Лицензия PRO
             fill_cell(4, 1, "Лицензия сотрудника PRO")
-            fill_cell(4, 2, "140,00 ₽")
+            fill_cell(4, 2, "140 ₽")
             fill_cell(4, 3, employee_count)
             fill_cell(4, 4, "12")
             fill_cell(4, 5, format_cost(140 * data[
@@ -366,20 +366,20 @@ def fill_396_template(doc, data, is_onprem=False):
         # On-prem (если нужен)
         if is_onprem:
             fill_cell(onprem_row, 1, "On-prem размещение")
-            fill_cell(onprem_row, 2, "400 000,00 ₽")
+            fill_cell(onprem_row, 2, "400 000 ₽")
             fill_cell(onprem_row, 3, "1")
             fill_cell(onprem_row, 4, "12")
-            fill_cell(onprem_row, 5, "400 000,00 ₽")
+            fill_cell(onprem_row, 5, "400 000 ₽")
             total_row = onprem_row + 1
         else:
             total_row = onprem_row
 
         # SMS (фиксированная стоимость)
         fill_cell(total_row, 1, "SMS-сообщения*")
-        fill_cell(total_row, 2, "4,00 ₽")
+        fill_cell(total_row, 2, "4 ₽")
         fill_cell(total_row, 3, "1")
         fill_cell(total_row, 4, "12")
-        fill_cell(total_row, 5, "4,00 ₽")
+        fill_cell(total_row, 5, "4 ₽")
 
         # Итоговая сумма (без учета SMS)
         total = (
