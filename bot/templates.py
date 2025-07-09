@@ -354,10 +354,10 @@ def fill_396_template(doc, data, is_onprem=False):
         if "PRO" in table.cell(4, 1).text:  # Это таблица PRO
             # Лицензия PRO
             fill_cell(4, 1, "Лицензия сотрудника PRO")
-            fill_cell(4, 2, "140 ₽")
+            fill_cell(4, 2, "144 ₽")
             fill_cell(4, 3, employee_count)
             fill_cell(4, 4, "12")
-            fill_cell(4, 5, format_cost(140 * data[
+            fill_cell(4, 5, format_cost(144 * data[
                 "employee_license_count"], with_ruble=True))
             onprem_row = 5
         else:
