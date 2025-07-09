@@ -389,7 +389,7 @@ def fill_396_template(doc, data, is_onprem=False):
         )
 
         if "PRO" in table.cell(4, 1).text:
-            total += 140 * data["employee_license_count"]
+            total += 144 * data["employee_license_count"]
 
         if is_onprem:
             total += 400000
