@@ -472,7 +472,7 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
         doc = load_template("template_complex.docx")
         fill_complex_template(doc, data)
     elif template_choice == "marketing":
-        doc = load_template("template_marketing.docx")
+        doc = load_template("template_m_no.docx")
         fill_marketing_template(doc, data)
 
     # Генерируем имя файла с timestamp
