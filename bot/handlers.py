@@ -2,7 +2,7 @@ from aiogram import Router, types, Bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from bot.states import FormStandard, FormComplex, FormMarketing
+from bot.states import FormStandard, FormComplex, FormMarketing, FormPDF
 from .utils import (
     clean_input, cleanup_kp_files, file_id_mapping,
     convert_to_pdf_libreoffice
@@ -507,42 +507,18 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
 
 
 @router.callback_query(lambda c: c.data.startswith("convert_to_pdf_"))
-async def convert_to_pdf(callback: types.CallbackQuery, bot: Bot):
+async def convert_to_pdf(callback: types.CallbackQuery,
+                         bot: Bot, state: FSMContext):
     unique_id = callback.data.split("_")[3]
-    file_id = file_id_mapping.get(unique_id)
 
-    if not file_id:
-        await callback.message.answer("Файл не найден.")
-        await callback.answer()
-        return
+    # Сохраняем unique_id в хранилище FSM
+    await state.update_data(pdf_unique_id=unique_id)
 
-    file_info = await bot.get_file(file_id)
-    file_path = file_info.file_path
+    # Запрашиваем у пользователя название файла
+    await callback.message.answer("Введите название файла для PDF:")
 
-    file = await bot.download_file(file_path)
-    docx_path = f"temp_{unique_id}.docx"
-    pdf_path = None
-
-    with open(docx_path, "wb") as f:
-        f.write(file.read())
-
-    try:
-        pdf_path = convert_to_pdf_libreoffice(docx_path)
-        base_name = os.path.splitext(os.path.basename(docx_path))[0]
-        filename = f"{base_name}.pdf"
-
-        with open(pdf_path, "rb") as f:
-            await callback.message.answer_document(
-                types.BufferedInputFile(f.read(), filename=filename),
-                caption="Ваше КП в формате PDF."
-            )
-    except Exception as e:
-        await callback.message.answer(f"Ошибка при конвертации: {e}")
-    finally:
-        for path in (docx_path, pdf_path):
-            if path and os.path.exists(path):
-                os.remove(path)
-
+    # Устанавливаем состояние ожидания ввода имени файла
+    await state.set_state(FormPDF.filename)
     await callback.answer()
 
 
@@ -561,3 +537,65 @@ async def process_kp_expiration(message: types.Message, state: FSMContext):
 
     await state.update_data(kp_expiration=date_text)
     await generate_kp(message.bot, message, state)
+
+
+@router.message(FormPDF.filename)
+async def process_pdf_filename(message: types.Message,
+                               bot: Bot, state: FSMContext):
+    # Получаем данные из FSM
+    data = await state.get_data()
+    unique_id = data.get("pdf_unique_id")
+
+    if not unique_id:
+        await message.answer("Ошибка: сессия устарела. Попробуйте снова.")
+        await state.clear()
+        return
+
+    # Получаем file_id из mapping
+    file_id = file_id_mapping.get(unique_id)
+    if not file_id:
+        await message.answer("Файл не найден. Создайте КП заново.")
+        await state.clear()
+        return
+
+    # Очищаем введенное имя от недопустимых символов
+    user_filename = message.text.strip()
+    safe_filename = "".join(
+        c for c in user_filename
+        if c.isalnum() or c in (' ', '-', '_')
+    ).strip() or "КП"  # Если имя пустое, используем "КП" по умолчанию
+
+    # Скачиваем DOCX
+    file_info = await bot.get_file(file_id)
+    file = await bot.download_file(file_info.file_path)
+
+    # Сохраняем временный DOCX
+    docx_path = f"temp_{unique_id}.docx"
+    with open(docx_path, "wb") as f:
+        f.write(file.read())
+
+    # Конвертируем в PDF
+    try:
+        pdf_path = convert_to_pdf_libreoffice(docx_path)
+
+        # Отправляем PDF с пользовательским именем
+        with open(pdf_path, "rb") as f:
+            await message.answer_document(
+                types.BufferedInputFile(
+                    f.read(), 
+                    filename=f"{safe_filename}.pdf"
+                ),
+                caption=f"Ваше КП '{safe_filename}' в формате PDF."
+            )
+
+    except Exception as e:
+        await message.answer(f"Ошибка при конвертации: {e}")
+
+    finally:
+        # Удаляем временные файлы
+        for path in (docx_path, pdf_path):
+            if path and os.path.exists(path):
+                os.remove(path)
+
+    # Очищаем состояние
+    await state.clear()

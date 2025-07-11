@@ -32,3 +32,7 @@ class FormMarketing(StatesGroup):
     sms_count = State()
     custom_conditions = State()
     current_condition = State()
+
+
+class FormPDF(StatesGroup):
+    filename = State()
