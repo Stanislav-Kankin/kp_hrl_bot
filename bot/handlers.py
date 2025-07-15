@@ -57,7 +57,8 @@ async def start_kp(message: types.Message, state: FSMContext):
 
 
 @router.callback_query(lambda c: c.data.startswith("template_"))
-async def process_template_choice(callback: types.CallbackQuery, state: FSMContext):
+async def process_template_choice(callback: types.CallbackQuery,
+                                  state: FSMContext):
     template_choice = callback.data.split("_")[1]
     await state.update_data(template_choice=template_choice)
 
@@ -103,7 +104,8 @@ async def process_marketing_company_name(message: types.Message,
 
 
 @router.message(FormStandard.hr_license_count)
-async def process_hr_license_count_standard(message: types.Message, state: FSMContext):
+async def process_hr_license_count_standard(message: types.Message,
+                                            state: FSMContext):
     try:
         value = clean_input(message.text)
         await state.update_data(hr_license_count=value)
@@ -472,7 +474,11 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
         doc = load_template("template_complex.docx")
         fill_complex_template(doc, data)
     elif template_choice == "marketing":
-        doc = load_template("template_m_no.docx")
+        need_onprem = data.get("need_onprem", False)
+        if need_onprem:
+            doc = load_template("template_m.docx")  # Шаблон С on-prem
+        else:
+            doc = load_template("template_m_no.docx")  # Шаблон БЕЗ on-prem
         fill_marketing_template(doc, data)
 
     # Генерируем имя файла с timestamp
