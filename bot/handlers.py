@@ -476,7 +476,7 @@ async def generate_kp(bot: Bot, message: types.Message, state: FSMContext):
     elif template_choice == "marketing":
         need_onprem = data.get("need_onprem", False)
         if need_onprem:
-            doc = load_template("template_m.docx")  # Шаблон С on-prem
+            doc = load_template("template_.docx")  # Шаблон С on-prem
         else:
             doc = load_template("template_m_no.docx")  # Шаблон БЕЗ on-prem
         fill_marketing_template(doc, data)
